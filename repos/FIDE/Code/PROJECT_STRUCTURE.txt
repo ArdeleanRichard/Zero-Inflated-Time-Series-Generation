@@ -1,0 +1,239 @@
+FIDE Time Series Generation Project
+=====================================
+
+Project Structure:
+------------------
+
+your_project/
+│
+├── main.py                      # Main training script - START HERE
+│   ├── Loads and processes data
+│   ├── Trains the diffusion model
+│   ├── Generates samples
+│   └── Runs evaluation
+│
+├── model.py                     # Neural network architecture
+│   ├── TransformerModel         # Main diffusion model
+│   ├── PositionalEncoding       # Time and step encoding
+│   ├── FeedForward              # Feed-forward layers
+│   └── ScalarEmbedding          # Conditional embedding
+│
+├── train_utilities.py           # Training and diffusion utilities
+│   ├── get_betas()              # Beta schedule for diffusion
+│   ├── add_noise()              # Add GP-correlated noise
+│   ├── get_loss()               # Calculate training loss
+│   ├── sample()                 # Generate samples from model
+│   ├── plot_losses()            # Visualize training
+│   └── linear_decay()           # Regularization schedule
+│
+├── data_process.py              # Data preprocessing
+│   ├── process_data()           # Normalize and sequence data
+│   └── fit_AR_model()           # Fit autoregressive model
+│
+├── general_utilities.py         # Statistical utilities
+│   ├── fitting_gev_and_sampling() # Fit GEV distribution
+│   ├── plot_kde()               # KDE visualization
+│   ├── KS_Test()                # Kolmogorov-Smirnov test
+│   ├── CMD()                    # Cramér-von Mises distance
+│   ├── KL_JS_divergence()       # KL/JS divergence
+│   └── CRPS()                   # Continuous ranked probability score
+│
+├── evaluation.py                # Advanced evaluation metrics
+│   ├── RNN_regression()         # RNN model builder
+│   ├── evaluate_predictive_score()     # Predictive evaluation
+│   ├── evaluate_discriminative_score() # Discriminative evaluation
+│   └── visualize_pca_tsne()     # PCA/t-SNE visualization
+│
+├── evaluation_runner.py         # Comprehensive evaluation wrapper
+│   └── run_comprehensive_evaluation()  # Run all evaluations
+│
+├── generate_example_data.py     # Create synthetic test data
+│   └── generate_example_temperature_data()
+│
+├── requirements.txt             # Python dependencies
+├── README.md                    # Full documentation
+├── QUICKSTART.md                # Quick start guide
+└── PROJECT_STRUCTURE.txt        # This file
+│
+└── Data/                        # Data directory (create this)
+    └── temperature_raw.csv      # Your temperature data
+
+
+Workflow:
+---------
+
+1. SETUP
+   └── pip install -r requirements.txt
+
+2. DATA PREPARATION
+   ├── Place your CSV in Data/temperature_raw.csv
+
+3. TRAINING
+   └── python main.py
+       ├── Loads data from Data/temperature_raw.csv
+       ├── Processes and standardizes data
+       ├── Fits GEV distribution
+       ├── Applies frequency enhancement
+       ├── Trains diffusion model
+       ├── Generates samples
+       ├── Runs evaluation
+       └── Saves model to diffusion_model.pth
+
+4. EVALUATION (automated in main.py)
+   └── Metrics computed:
+       ├── GEV fit quality
+       ├── K-S test
+       ├── Cramér-von Mises distance
+       ├── KL/JS divergence
+       ├── CRPS
+       ├── Predictive score (RNN)
+       ├── Discriminative score (LSTM)
+       └── PCA/t-SNE visualization
+
+5. CUSTOM EVALUATION (optional)
+   └── Use evaluation_runner.py for comprehensive analysis
+
+
+Module Dependencies:
+--------------------
+
+main.py
+  ├── data_process.py
+  │   ├── numpy
+  │   ├── torch
+  │   ├── sklearn
+  │   └── statsmodels
+  ├── general_utilities.py
+  │   ├── numpy
+  │   ├── matplotlib
+  │   ├── seaborn
+  │   ├── scipy
+  │   └── properscoring
+  ├── model.py
+  │   └── torch
+  └── train_utilities.py
+      ├── numpy
+      ├── torch
+      └── matplotlib
+
+evaluation.py
+  ├── numpy
+  ├── pandas
+  ├── matplotlib
+  ├── sklearn
+  └── tensorflow (for RNN/LSTM)
+
+evaluation_runner.py
+  ├── evaluation.py
+  ├── general_utilities.py
+  └── data_process.py
+
+
+Key Functions by Module:
+-------------------------
+
+main.py:
+  - Main execution script (no importable functions)
+  - Run as: python main.py
+
+model.py:
+  - TransformerModel(dim, hidden_dim, max_i, seq_len, n_condition)
+
+train_utilities.py:
+  - get_betas(steps, device)
+  - add_noise(x, t, i, alphas)
+  - get_loss(x, t, bm, model, ...)
+  - sample(t, bm_sample, model, ...)
+  - plot_losses(train_history)
+
+data_process.py:
+  - process_data(ori_data, time_series_seq_len)
+  - fit_AR_model(data, true_coeffs, order, seq_len)
+
+general_utilities.py:
+  - fitting_gev_and_sampling(ymax, num_samples)
+  - plot_kde(real, generated, ...)
+  - KS_Test(real, generated)
+  - CMD(real, generated)
+  - KL_JS_divergence(p_samples, q_samples)
+  - CRPS(real, generated)
+
+evaluation.py:
+  - evaluate_predictive_score(real_data, synth_data, seq_len)
+  - evaluate_discriminative_score(real_data, synth_data, seq_len, n_seq)
+  - visualize_pca_tsne(real_data, synthetic_data, seq_len)
+
+evaluation_runner.py:
+  - run_comprehensive_evaluation(real_data, samples_ddpm, ...)
+
+
+Configuration Parameters:
+--------------------------
+
+In main.py (modify as needed):
+
+Data:
+  - time_series_seq_len = 30          # Sequence length
+  - data_path = "./Data/temperature_raw.csv"
+
+Training:
+  - batch_size = 2000                 # Batch size
+  - n_epochs = 400                    # Training epochs
+  - is_regularizer = True             # Use GEV regularization
+
+Model:
+  - hidden_dim = 64                   # Model hidden dimension
+  - num_layers = 8                    # Transformer layers
+
+Diffusion (in train_utilities.py):
+  - diffusion_steps = 100             # Diffusion timesteps
+  - gp_sigma = 0.05                   # GP kernel parameter
+
+Frequency Enhancement:
+  - c = 1.1                           # Enhancement factor
+  - percentage_of_freq_enhanced = 20  # % of frequencies
+
+
+Output Files:
+-------------
+
+After running main.py:
+  - diffusion_model.pth               # Trained model checkpoint
+  - Various plots displayed during training
+
+During execution, you'll see:
+  - GEV fit plots
+  - Training loss curves
+  - Generated sample visualizations
+  - KDE comparison plots
+  - Statistical test results
+  - Evaluation metrics
+
+
+Hardware Requirements:
+----------------------
+
+Minimum:
+  - CPU: Any modern processor
+  - RAM: 8GB
+  - Storage: 2GB free
+
+Recommended:
+  - GPU: NVIDIA GPU with CUDA support
+  - RAM: 16GB
+  - Storage: 5GB free
+
+Training Time (10 years of daily data):
+  - CPU: ~2 hours
+  - GPU (CUDA): ~15 minutes
+
+
+Support:
+--------
+
+For issues or questions:
+  1. Check README.md for detailed documentation
+  2. Check QUICKSTART.md for step-by-step guide
+  3. Verify data format matches expected structure
+  4. Try with generated example data first
+  5. Check all dependencies are installed correctly

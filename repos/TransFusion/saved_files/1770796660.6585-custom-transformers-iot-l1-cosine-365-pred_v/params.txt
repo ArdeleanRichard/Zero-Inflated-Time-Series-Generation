@@ -1,0 +1,12 @@
+{
+  "dataset_name": "iot",
+  "beta_schedule": "cosine",
+  "objective": "pred_v",
+  "seq_len": 365,
+  "batch_size": 16,
+  "n_head": 2,
+  "hidden_dim": 64,
+  "num_of_layers": 3,
+  "training_epoch": 10,
+  "timesteps": 1
+}

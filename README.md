@@ -1,6 +1,6 @@
 # Zero Inflated Time Series Generation
  
-This repository contains the code and configurations for a study submitted as a scientific research article.
+This repository contains the code and configurations for a study submitted as a scientific research article including two new proposed approach for zero inflated time series generation.
 
 <!-- 
 [![DOI](https://img.shields.io/badge/DOI-10.3390/diagnostics15141823-blue)](https://doi.org/10.3390/diagnostics15141823) 
@@ -61,10 +61,10 @@ We show here a summary of the evaluations made showing the difference in 0 ratio
 | --------- | ------------------------- | --------- | ---------  | ---------  |
 | TimeVAE   | M5    					| 0.144     | **1.344**  | 0.389      |
 | ZITS-GAN  | M5    					| **0.012** | 1.448      | 0.213      |
-| ZITS-VAE	| M5    					| 0.014     | 1.408      | **0.126**  |
+| ZITS-VAE	 | M5    					| 0.014     | 1.408      | **0.126**  |
 | TimeVAE   | Household IoT Devices     | 0.259     | 2847       | 0.5        |
-| YOLOv11   | Household IoT Devices     | 0.038     | **2153**   | **0**      |
-| YOLO-World| Household IoT Devices     | **0.033** | **2153**   | 0.248      |
+| ZITS-GAN  | Household IoT Devices     | 0.038     | **2153**   | **0**      |
+| ZITS-VAE  | Household IoT Devices     | **0.033** | **2153**   | 0.248      |
 
 ---
 <!-- 

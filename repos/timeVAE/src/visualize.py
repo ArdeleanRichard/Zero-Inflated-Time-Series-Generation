@@ -154,7 +154,7 @@ def visualize_and_save_tsne(
     )
 
     # Compute the t-SNE of the combined samples
-    tsne = TSNE(n_components=2, perplexity=40, n_iter=300, random_state=42)
+    tsne = TSNE(n_components=2, perplexity=40, max_iter=300, random_state=42)
     tsne_samples = tsne.fit_transform(combined_samples)
 
     # Create a DataFrame for the t-SNE samples

@@ -186,7 +186,7 @@ def temporal_consistency_loss(gate_prob: torch.Tensor, x: torch.Tensor) -> torch
 # VAE
 # ===========================================================================
 
-class TimeSeriesVAE(nn.Module):
+class ZITS_VAE(nn.Module):
     """
     VAE with shared ConvEncoder + ZeroInflatedDecoder.
 
@@ -308,7 +308,7 @@ def train_vae(model, train_loader, val_loader, optimizer,
 # GAN — Generator
 # ===========================================================================
 
-class TimeSeriesGenerator(nn.Module):
+class ZITS_Generator(nn.Module):
     """
     Generator: z → (output, gate_prob, gate_logit, mag)
     Reuses ZeroInflatedDecoder directly.
@@ -336,7 +336,7 @@ class TimeSeriesGenerator(nn.Module):
 # GAN — Discriminator (WGAN-GP compatible, spectral norm, no BN)
 # ===========================================================================
 
-class TimeSeriesDiscriminator(nn.Module):
+class ZITS_Discriminator(nn.Module):
     """
     Discriminator for WGAN-GP.
 
@@ -564,28 +564,28 @@ def _n_params(model: nn.Module) -> int:
 # VAE entry points
 # ===========================================================================
 
-def main_train_vae(data, ori_data: np.ndarray):
+def main_train_vae(data, ori_data: np.ndarray, latent_dim=64, num_epochs=100, lr=1e-3, beta=0.3, gate_weight=5.0, recon_weight=10.0, tc_weight=1.0):
     raw, proc, pp = _load_and_preprocess(data, ori_data)
     seq_len       = proc.shape[1]
     train_loader, val_loader = _make_loaders(proc)
 
-    print("\nInitialising VAE ...")
-    model     = TimeSeriesVAE(seq_length=seq_len, latent_dim=64).to(device)
-    optimizer = optim.Adam(model.parameters(), lr=1e-3)
+    print("\nInitialising ZITS-VAE ...")
+    model     = ZITS_VAE(seq_length=seq_len, latent_dim=latent_dim).to(device)
+    optimizer = optim.Adam(model.parameters(), lr=lr)
     print(f"Parameters: {_n_params(model):,}")
 
     history = train_vae(model, train_loader, val_loader, optimizer,
-                        num_epochs=100, beta=0.3,
-                        gate_weight=5.0, recon_weight=10.0, tc_weight=1.0)
+                        num_epochs=num_epochs, beta=beta,
+                        gate_weight=gate_weight, recon_weight=recon_weight, tc_weight=tc_weight)
 
     _save_checkpoint(model.state_dict(),
-                     os.path.join(OUT_FOLDER, 'vae_model.pth'),
-                     seq_length=seq_len, latent_dim=64)
-    pp.save(os.path.join(OUT_FOLDER, 'vae_preprocessor.json'))
+                     os.path.join(OUT_FOLDER, 'zits_vae_model.pth'),
+                     seq_length=seq_len, latent_dim=latent_dim)
+    pp.save(os.path.join(OUT_FOLDER, 'zits_vae_preprocessor.json'))
     plot_training_history(history,
-                          save_path=os.path.join(OUT_FOLDER, 'vae_training_history.png'),
+                          save_path=os.path.join(OUT_FOLDER, 'zits_vae_training_history.png'),
                           model_type='vae')
-    print(f"\nVAE training complete. Files saved to: {OUT_FOLDER}")
+    print(f"\nZITS-VAE training complete. Files saved to: {OUT_FOLDER}")
 
 
 def main_test_vae(data, ori_data: np.ndarray, num_synthetic: int = 1000):
@@ -596,51 +596,51 @@ def main_test_vae(data, ori_data: np.ndarray, num_synthetic: int = 1000):
     pp.load(os.path.join(OUT_FOLDER, 'vae_preprocessor.json'))
 
     ckpt  = torch.load(os.path.join(OUT_FOLDER, 'vae_model.pth'), map_location=device)
-    model = TimeSeriesVAE(seq_length=ckpt['seq_length'],
-                          latent_dim=ckpt['latent_dim']).to(device)
+    model = ZITS_VAE(seq_length=ckpt['seq_length'],
+                     latent_dim=ckpt['latent_dim']).to(device)
     model.load_state_dict(ckpt['model_state_dict'])
     model.eval()
-    print(f"VAE parameters: {_n_params(model):,}")
+    print(f"ZITS-VAE parameters: {_n_params(model):,}")
     print(f"\nGenerating {num_synthetic} synthetic samples ...")
-    _generate_and_save(model, pp, 'vae', num_synthetic, ori_data)
-    print("VAE testing complete.")
+    _generate_and_save(model, pp, 'zits_vae', num_synthetic, ori_data)
+    print("ZITS-VAE testing complete.")
 
 
 # ===========================================================================
 # GAN entry points
 # ===========================================================================
 
-def main_train_gan(data, ori_data: np.ndarray):
+def main_train_gan(data, ori_data: np.ndarray, latent_dim=64, num_epochs=100, lr=1e-4, betas=(0.0, 0.9), gate_weight=5.0, recon_weight=10.0, tc_weight=1.0, fm_weight=1.0):
     raw, proc, pp = _load_and_preprocess(data, ori_data)
     seq_len       = proc.shape[1]
     train_loader, val_loader = _make_loaders(proc)
 
-    print("\nInitialising GAN (WGAN-GP) ...")
-    generator     = TimeSeriesGenerator(seq_length=seq_len, latent_dim=64).to(device)
-    discriminator = TimeSeriesDiscriminator(seq_length=seq_len).to(device)
+    print("\nInitialising ZITS-GAN (WGAN-GP) ...")
+    generator     = ZITS_Generator(seq_length=seq_len, latent_dim=latent_dim).to(device)
+    discriminator = ZITS_Discriminator(seq_length=seq_len).to(device)
     # WGAN-GP recommends lower lr and no momentum (betas=(0, 0.9))
-    g_opt = optim.Adam(generator.parameters(),     lr=1e-4, betas=(0.0, 0.9))
-    d_opt = optim.Adam(discriminator.parameters(), lr=1e-4, betas=(0.0, 0.9))
-    print(f"Generator:     {_n_params(generator):,}  params")
-    print(f"Discriminator: {_n_params(discriminator):,}  params")
+    g_opt = optim.Adam(generator.parameters(),     lr=lr, betas=betas)
+    d_opt = optim.Adam(discriminator.parameters(), lr=lr, betas=betas)
+    print(f"ZITS-Generator:     {_n_params(generator):,}  params")
+    print(f"ZITS-Discriminator: {_n_params(discriminator):,}  params")
 
     history = train_gan(generator, discriminator, train_loader, g_opt, d_opt,
-                        num_epochs=100,
-                        gate_weight=5.0, recon_weight=10.0,
-                        fm_weight=1.0, tc_weight=1.0,
+                        num_epochs=num_epochs,
+                        gate_weight=gate_weight, recon_weight=recon_weight,
+                        fm_weight=fm_weight, tc_weight=tc_weight,
                         n_critic=5, lambda_gp=10.0)
 
     _save_checkpoint(generator.state_dict(),
-                     os.path.join(OUT_FOLDER, 'gan_generator.pth'),
-                     seq_length=seq_len, latent_dim=64)
+                     os.path.join(OUT_FOLDER, 'zits_gan_generator.pth'),
+                     seq_length=seq_len, latent_dim=latent_dim)
     _save_checkpoint(discriminator.state_dict(),
-                     os.path.join(OUT_FOLDER, 'gan_discriminator.pth'),
+                     os.path.join(OUT_FOLDER, 'zits_gan_discriminator.pth'),
                      seq_length=seq_len)
-    pp.save(os.path.join(OUT_FOLDER, 'gan_preprocessor.json'))
+    pp.save(os.path.join(OUT_FOLDER, 'zits_gan_preprocessor.json'))
     plot_training_history(history,
-                          save_path=os.path.join(OUT_FOLDER, 'gan_training_history.png'),
+                          save_path=os.path.join(OUT_FOLDER, 'zits_gan_training_history.png'),
                           model_type='gan')
-    print(f"\nGAN training complete. Files saved to: {OUT_FOLDER}")
+    print(f"\nZITS-GAN training complete. Files saved to: {OUT_FOLDER}")
 
 
 def main_test_gan(data, ori_data: np.ndarray, num_synthetic: int = 1000):
@@ -651,26 +651,26 @@ def main_test_gan(data, ori_data: np.ndarray, num_synthetic: int = 1000):
     pp.load(os.path.join(OUT_FOLDER, 'gan_preprocessor.json'))
 
     ckpt  = torch.load(os.path.join(OUT_FOLDER, 'gan_generator.pth'), map_location=device)
-    model = TimeSeriesGenerator(seq_length=ckpt['seq_length'], latent_dim=ckpt['latent_dim']).to(device)
+    model = ZITS_Generator(seq_length=ckpt['seq_length'], latent_dim=ckpt['latent_dim']).to(device)
     model.load_state_dict(ckpt['model_state_dict'])
     model.eval()
     print(f"Generator parameters: {_n_params(model):,}")
     print(f"\nGenerating {num_synthetic} synthetic samples ...")
-    _generate_and_save(model, pp, 'gan', num_synthetic, ori_data)
-    print("GAN testing complete.")
+    _generate_and_save(model, pp, 'zits_gan', num_synthetic, ori_data)
+    print("ZITS-GAN testing complete.")
 
 
 # ===========================================================================
 
 if __name__ == "__main__":
     # ori_data = load_iot_data()
-    # main_train_vae("iot", ori_data)
+    # main_train_vae("iot", ori_data, latent_dim=64, num_epochs=100, lr=1e-3, beta=0.3, gate_weight=5.0, recon_weight=10.0, tc_weight=1.0)
     # main_test_vae("iot", ori_data, num_synthetic=50000)
-    # main_train_gan("iot", ori_data)
+    # main_train_gan("iot", ori_data, latent_dim=64, num_epochs=100, lr=1e-4, betas=(0.0, 0.9), gate_weight=5.0, recon_weight=10.0, tc_weight=1.0, fm_weight=1.0)
     # main_test_gan("iot", ori_data, num_synthetic=50000)
 
     ori_data = load_m5_data()
-    main_train_vae("m5", ori_data)
+    main_train_vae("m5", ori_data, latent_dim=64, num_epochs=100, lr=1e-3, beta=0.3, gate_weight=5.0, recon_weight=10.0, tc_weight=1.0)
     main_test_vae("m5", ori_data, num_synthetic=30000)
-    main_train_gan("m5", ori_data)
+    main_train_gan("m5", ori_data, latent_dim=64, num_epochs=100, lr=1e-4, betas=(0.0, 0.9), gate_weight=5.0, recon_weight=10.0, tc_weight=1.0, fm_weight=1.0)
     main_test_gan("m5", ori_data, num_synthetic=30000)

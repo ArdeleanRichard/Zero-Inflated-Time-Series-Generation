@@ -17,3 +17,6 @@ venv.bak/
 **/.ipynb_checkpoints/
 
 tmp/
+
+
+data/iot_durations_2021.npz

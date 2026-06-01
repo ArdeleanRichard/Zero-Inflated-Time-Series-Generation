@@ -1,5 +1,4 @@
 import os, warnings, sys
-from re import T
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"  # or any {'0', '1', '2'}
 warnings.filterwarnings("ignore")

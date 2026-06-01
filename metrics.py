@@ -60,7 +60,7 @@ def kl_divergence_from_samples(a, b, bins=50, eps=1e-10):
     return kl
 
 
-def calculate_evaluation_metrics(real_data: np.ndarray, synthetic_data: np.ndarray) -> Dict:
+def calculate_evaluation_metrics(real_data, synthetic_data, iterations=100, batch_size=128) -> Dict:
     """
     Calculate comprehensive evaluation metrics for synthetic time series.
 
@@ -79,27 +79,6 @@ def calculate_evaluation_metrics(real_data: np.ndarray, synthetic_data: np.ndarr
     metrics['zero_ratio_synthetic'] = synth_zero_ratio
     metrics['zero_ratio_diff'] = abs(real_zero_ratio - synth_zero_ratio)
 
-    # Non-zero statistics
-    real_nonzero = real_data[real_data > 0]
-    synth_nonzero = synthetic_data[synthetic_data > 0]
-
-    if len(real_nonzero) > 0 and len(synth_nonzero) > 0:
-        # Wasserstein distance (Earth Mover's Distance)
-        # Lower is better, measures distribution similarity
-        metrics['wasserstein_distance'] = wasserstein_distance(real_nonzero.flatten(), synth_nonzero.flatten())
-
-        # KL divergence approximation
-        try:
-            # hist_real, bins = np.histogram(real_nonzero, bins=50, density=True)
-            # hist_synth, _ = np.histogram(synth_nonzero, bins=bins, density=True)
-            # hist_real = hist_real + 1e-10  # Avoid log(0)
-            # hist_synth = hist_synth + 1e-10
-            # metrics['kl_divergence'] = np.sum(hist_real * np.log(hist_real / hist_synth))
-            metrics['kl_divergence'] = kl_divergence_from_samples(real_nonzero.flatten(), synth_nonzero.flatten(), bins=50, eps=1e-10)
-
-        except:
-            metrics['kl_divergence'] = np.nan
-
     # 2. Statistical moments
     metrics['mean_real'] = np.mean(real_data)
     metrics['mean_synthetic'] = np.mean(synthetic_data)
@@ -116,6 +95,19 @@ def calculate_evaluation_metrics(real_data: np.ndarray, synthetic_data: np.ndarr
     metrics['kurtosis_real'] = stats.kurtosis(real_data.flatten())
     metrics['kurtosis_synthetic'] = stats.kurtosis(synthetic_data.flatten())
     metrics['kurtosis_diff'] = abs(stats.kurtosis(real_data.flatten()) - stats.kurtosis(synthetic_data.flatten()))
+
+
+    # 4. Quantile comparison
+    quantiles = [0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]
+    quantile_diffs = []
+    for q in quantiles:
+        real_q = np.quantile(real_data, q)
+        synth_q = np.quantile(synthetic_data, q)
+        quantile_diffs.append(abs(real_q - synth_q))
+        metrics[f'quantile_{int(q * 100)}_diff'] = abs(real_q - synth_q)
+
+    metrics['mean_quantile_diff'] = np.mean(quantile_diffs)
+
 
     # 3. Temporal metrics
     # Autocorrelation at different lags
@@ -141,16 +133,27 @@ def calculate_evaluation_metrics(real_data: np.ndarray, synthetic_data: np.ndarr
     else:
         metrics['autocorr_mae'] = np.mean(np.abs(real_autocorr[:min_len] - synth_autocorr[:min_len]))
 
-    # 4. Quantile comparison
-    quantiles = [0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]
-    quantile_diffs = []
-    for q in quantiles:
-        real_q = np.quantile(real_data, q)
-        synth_q = np.quantile(synthetic_data, q)
-        quantile_diffs.append(abs(real_q - synth_q))
-        metrics[f'quantile_{int(q * 100)}_diff'] = abs(real_q - synth_q)
 
-    metrics['mean_quantile_diff'] = np.mean(quantile_diffs)
+    # Non-zero statistics
+    real_nonzero = real_data[real_data > 0]
+    synth_nonzero = synthetic_data[synthetic_data > 0]
+
+    if len(real_nonzero) > 0 and len(synth_nonzero) > 0:
+        # Wasserstein distance (Earth Mover's Distance)
+        # Lower is better, measures distribution similarity
+        metrics['wasserstein_distance'] = wasserstein_distance(real_nonzero.flatten(), synth_nonzero.flatten())
+
+        # KL divergence approximation
+        try:
+            # hist_real, bins = np.histogram(real_nonzero, bins=50, density=True)
+            # hist_synth, _ = np.histogram(synth_nonzero, bins=bins, density=True)
+            # hist_real = hist_real + 1e-10  # Avoid log(0)
+            # hist_synth = hist_synth + 1e-10
+            # metrics['kl_divergence'] = np.sum(hist_real * np.log(hist_real / hist_synth))
+            metrics['kl_divergence'] = kl_divergence_from_samples(real_nonzero.flatten(), synth_nonzero.flatten(), bins=50, eps=1e-10)
+
+        except:
+            metrics['kl_divergence'] = np.nan
 
     # 5. Maximum Mean Discrepancy (MMD)
     # Simplified RBF kernel-based MMD
@@ -188,11 +191,15 @@ def calculate_evaluation_metrics(real_data: np.ndarray, synthetic_data: np.ndarr
     real_data = torch.from_numpy(real_data).float()
     synthetic_data = torch.from_numpy(synthetic_data).float()
 
-    metrics['ps'] = predictive_score_metrics(real_data, synthetic_data, iterations=10, batch_size=128)
-    metrics['ds'] = discriminative_score_metrics(real_data, synthetic_data, iterations=10, batch_size=128)
-    subset = 10000
-    metrics['lps'] = long_predictive_score_metrics(real_data[-subset:], synthetic_data[-subset:], iterations=10, batch_size=128)
-    metrics['lds'] = long_discriminative_score_metrics(real_data[-subset:], synthetic_data[-subset:], iterations=10, batch_size=128)
+    metrics['ps'] = predictive_score_metrics(real_data, synthetic_data, iterations=iterations, batch_size=batch_size)
+    metrics['ds'] = discriminative_score_metrics(real_data, synthetic_data, iterations=iterations, batch_size=batch_size)
+
+    metrics['lps'] = long_predictive_score_metrics(real_data, synthetic_data, iterations=iterations, batch_size=batch_size)
+    metrics['lds'] = long_discriminative_score_metrics(real_data, synthetic_data, iterations=iterations, batch_size=batch_size)
+    
+    # subset = 1000
+    # metrics['lps'] = long_predictive_score_metrics(real_data[:subset], synthetic_data[:subset], iterations=iterations, batch_size=batch_size)
+    # metrics['lds'] = long_discriminative_score_metrics(real_data[:subset], synthetic_data[:subset], iterations=iterations, batch_size=batch_size)
 
     return metrics
 
@@ -208,11 +215,6 @@ def print_evaluation_metrics(metrics: Dict):
     print(f"   Zero Ratio (Synthetic): {metrics['zero_ratio_synthetic']:.4f}")
     print(f"   Difference:             {metrics['zero_ratio_diff']:.4f}")
 
-    print("\n2. DISTRIBUTIONAL SIMILARITY")
-    print(f"   Wasserstein Distance:   {metrics.get('wasserstein_distance', 'N/A')}")
-    print(f"   KL Divergence:          {metrics.get('kl_divergence', 'N/A')}")
-    print(f"   MMD:                    {metrics['mmd']:.6f}")
-
     print("\n3. STATISTICAL MOMENTS")
     print(f"   Mean (Real):            {metrics['mean_real']:.2f}")
     print(f"   Mean (Synthetic):       {metrics['mean_synthetic']:.2f}")
@@ -225,12 +227,17 @@ def print_evaluation_metrics(metrics: Dict):
     print(f"   Skewness Difference:    {metrics['skewness_diff']:.4f}")
     print(f"   Kurtosis Difference:    {metrics['kurtosis_diff']:.4f}")
 
-    print("\n5. TEMPORAL CHARACTERISTICS")
-    print(f"   Autocorrelation MAE:    {metrics['autocorr_mae']:.4f}")
-
     print("\n6. QUANTILE COMPARISON")
     print(f"   Mean Quantile Diff:     {metrics['mean_quantile_diff']:.2f}")
     print("=" * 70 + "\n")
+
+    print("\n5. TEMPORAL CHARACTERISTICS")
+    print(f"   Autocorrelation MAE:    {metrics['autocorr_mae']:.4f}")
+
+    print("\n2. DISTRIBUTIONAL SIMILARITY")
+    print(f"   Wasserstein Distance:   {metrics.get('wasserstein_distance', 'N/A')}")
+    print(f"   KL Divergence:          {metrics.get('kl_divergence', 'N/A')}")
+    print(f"   MMD:                    {metrics['mmd']:.6f}")
 
     print("\n7. ADVANCED METRICS")
     print(f"   Predictive Score:            {metrics['ps']:.2f}")

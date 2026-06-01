@@ -139,8 +139,8 @@ if __name__ == "__main__":
 
     # check `/data/` for available datasets
     # Must copy dataset here, must be in npz format
-    # dataset = "wm_daily_appliance_durations_2021"
-    dataset = "m5_X_365"
+    dataset = "iot_durations_2021"
+    # dataset = "m5_X_365"
 
     # models: vae_dense, vae_conv, timeVAE
     # model_name = "timeVAE"

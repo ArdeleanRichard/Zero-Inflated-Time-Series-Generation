@@ -196,7 +196,7 @@ def visualize_pca_tsne(real_data, synthetic_data, seq_len, sample_size=250):
     
     n_components = 2
     pca = PCA(n_components=n_components)
-    tsne = TSNE(n_components=n_components, n_iter=300)
+    tsne = TSNE(n_components=n_components, max_iter=300)
     
     # The fit of the methods must be done only using the real sequential data
     pca.fit(real_data_reduced)

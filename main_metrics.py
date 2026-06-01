@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import json
 
+import umap
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
@@ -16,8 +17,7 @@ from metrics import (calculate_evaluation_metrics, print_evaluation_metrics, sav
 
 
 
-def plot_sample_comparisons(real_samples: np.ndarray, synthetic_samples: np.ndarray,
-                            num_samples: int = 5, save_path: str = 'sample_comparison.png'):
+def plot_sample_comparisons(real_samples, synthetic_samples,num_samples = 5, save_path = 'sample_comparison.png'):
     """Plot comparison between real and synthetic samples"""
     fig, axes = plt.subplots(num_samples, 2, figsize=(15, 3 * num_samples))
 
@@ -52,43 +52,25 @@ def visualization_dim_red(model, ori_data, gen_data, analysis="tsne", save_path=
     """
     print("\nDIM REDUCED PLOTTING AND SAVING")
     # Analysis sample size (for faster computation)
-    anal_sample_no = min([1000, len(ori_data)])
-    idx = np.random.permutation(min(len(ori_data), len(gen_data)))[:anal_sample_no]
 
     # Data preprocessing
     ori_data = np.asarray(ori_data)
     gen_data = np.asarray(gen_data)
 
-    ori_data = ori_data[idx]
-    gen_data = gen_data[idx]
-
-    ori_data = ori_data[..., np.newaxis]
-    gen_data = gen_data[..., np.newaxis]
-
-    no, seq_len, dim = ori_data.shape
-
-    for i in range(anal_sample_no):
-        if (i == 0):
-            prep_data = np.reshape(np.mean(ori_data[0, :, :], 1), [1, seq_len])
-            prep_data_hat = np.reshape(np.mean(gen_data[0, :, :], 1), [1, seq_len])
-        else:
-            prep_data = np.concatenate((prep_data, np.reshape(np.mean(ori_data[i, :, :], 1), [1, seq_len])))
-            prep_data_hat = np.concatenate((prep_data_hat, np.reshape(np.mean(gen_data[i, :, :], 1), [1, seq_len])))
-
     # Visualization parameter
-    colors = ["red" for i in range(anal_sample_no)] + ["blue" for i in range(anal_sample_no)]
+    colors = ["red" for i in range(len(ori_data))] + ["blue" for i in range(len(gen_data))]
 
     if analysis == 'pca':
         # PCA Analysis
         pca = PCA(n_components=2)
-        pca.fit(prep_data)
-        pca_results = pca.transform(prep_data)
-        pca_hat_results = pca.transform(prep_data_hat)
+        pca.fit(ori_data)
+        pca_results_ori = pca.transform(ori_data)
+        pca_results_gen = pca.transform(gen_data)
 
         # Plotting
         f, ax = plt.subplots(1)
-        plt.scatter(pca_results[:, 0], pca_results[:, 1], c=colors[:anal_sample_no], alpha=0.2, label="Original")
-        plt.scatter(pca_hat_results[:, 0], pca_hat_results[:, 1], c=colors[anal_sample_no:], alpha=0.2, label="Synthetic")
+        plt.scatter(pca_results_ori[:, 0], pca_results_ori[:, 1], c=colors[:len(ori_data)], alpha=0.2, label="Original")
+        plt.scatter(pca_results_gen[:, 0], pca_results_gen[:, 1], c=colors[len(ori_data):], alpha=0.2, label="Synthetic")
 
         ax.legend()
         plt.title(f'{MAP_MODEL_NAMES[model]}')
@@ -98,20 +80,25 @@ def visualization_dim_red(model, ori_data, gen_data, analysis="tsne", save_path=
         else:
             plt.show()
 
-    elif analysis == 'tsne':
-
-        # Do t-SNE Analysis together
-        prep_data_final = np.concatenate((prep_data, prep_data_hat), axis=0)
-
+    elif analysis == 'umap':
         # TSNE anlaysis
-        tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
-        tsne_results = tsne.fit_transform(prep_data_final)
+        embedding = umap.UMAP(n_components=2, random_state=42)
+        embedding.fit(ori_data)
+        umap_results_ori = embedding.transform(ori_data)
+        umap_results_gen = embedding.transform(gen_data)
 
-        # Plotting
         f, ax = plt.subplots(1)
+        plt.scatter(umap_results_ori[:, 0], umap_results_ori[:, 1], c=colors[:len(ori_data)], alpha=0.2, label="Original")
+        plt.scatter(umap_results_gen[:, 0], umap_results_gen[:, 1], c=colors[len(ori_data):], alpha=0.2, label="Synthetic")
 
-        plt.scatter(tsne_results[:anal_sample_no, 0], tsne_results[:anal_sample_no, 1], c=colors[:anal_sample_no], alpha=0.2, label="Original")
-        plt.scatter(tsne_results[anal_sample_no:, 0], tsne_results[anal_sample_no:, 1], c=colors[anal_sample_no:], alpha=0.2, label="Synthetic")
+
+        # tsne_results = tsne.fit_transform(prep_data_final)
+        #
+        # # Plotting
+        # f, ax = plt.subplots(1)
+        #
+        # plt.scatter(tsne_results[:anal_sample_no, 0], tsne_results[:anal_sample_no, 1], c=colors[:anal_sample_no], alpha=0.2, label="Original")
+        # plt.scatter(tsne_results[anal_sample_no:, 0], tsne_results[anal_sample_no:, 1], c=colors[anal_sample_no:], alpha=0.2, label="Synthetic")
 
         ax.legend()
 
@@ -123,9 +110,9 @@ def visualization_dim_red(model, ori_data, gen_data, analysis="tsne", save_path=
             plt.show()
 
 
-def analyze_iot():
-    DATA = "iot"
-    np_ori_data = np.load(f'./data/{DATA}_durations_2021.npz')
+
+def analyze_data(DATA, np_ori_data):
+
     results_dir = f"results_{DATA}"
 
     ori_data = np_ori_data['data']
@@ -134,7 +121,7 @@ def analyze_iot():
     ori_data = np.nan_to_num(ori_data).astype(np.float64)
     print(f"Original data shape: {ori_data.shape}")
 
-    for model in ["zits-gan", "zits-vae", "timegan", "transfusion", "fide", "chronogan", "tsgm_timegan", "tsgm_vae", "vae_dense", "vae_conv", "timeVAE"]:
+    for model in ["zip", "hurdle", "zits-gan", "zits-vae", "timegan", "transfusion", "fide", "chronogan", "tsgm_timegan", "tsgm_vae", "vae_dense", "vae_conv", "timeVAE"]:
 
         print(f"="*60)
         print(f"Model: {model}")
@@ -147,17 +134,31 @@ def analyze_iot():
         elif model == "timegan":
             np_gen_data = np.load(f'./repos/TimeGAN/out/{DATA}_{model}_generated_data.npz', allow_pickle=True)
         elif model == "timeVAE" or model == "vae_dense" or model == "vae_conv":
-            np_gen_data = np.load(f'./repos/timeVAE/outputs/gen_data/iot_durations_2021/{model}_iot_durations_2021_prior_samples.npz')
+            if DATA == "iot":
+                data_name = "iot_durations_2021"
+                np_gen_data = np.load(f'./repos/timeVAE/outputs/gen_data/{data_name}/{model}_{data_name}_prior_samples.npz')
+            elif DATA == "m5":
+                data_name = "m5_X_365"
+                np_gen_data = np.load(f'./repos/timeVAE/outputs/gen_data/{data_name}/{model}_{data_name}_prior_samples.npz')
         elif model == "transfusion":
-            np_gen_data = np.load(f'./repos/TransFusion/saved_files/1770796660.6585-custom-transformers-{DATA}-l1-cosine-365-pred_v/test_outputs/synthetic_data_1770809439.npz', allow_pickle=True)
+            if DATA == "iot":
+                np_gen_data = np.load(f'./repos/TransFusion/saved_files/1770796660.6585-custom-transformers-{DATA}-l1-cosine-365-pred_v/test_outputs/synthetic_data_1770809439.npz', allow_pickle=True)
+            elif DATA == "m5":
+                np_gen_data = np.load(
+                    f'./repos/TransFusion/saved_files/1771403691.0601-custom-transformers-{DATA}-l1-cosine-365-pred_v/test_outputs/synthetic_data_1771411195.npz', allow_pickle=True)
         elif model == "tsgm_timegan" or model == "tsgm_vae":
             np_gen_data = np.load(f'./repos/tsgm/{DATA}_results/{model}_gen.npz')
-        elif model == "ours":
-            np_gen_data = np.load(f'./trial_vae/v4/generated_data.npz', allow_pickle=True)
         elif model == "zits-gan":
-            np_gen_data = np.load(f'./out_{DATA}/vae_generated_data.npz', allow_pickle=True)
+            np_gen_data = np.load(f'./out_{DATA}/saved/vae_generated_data.npz', allow_pickle=True)
         elif model == "zits-vae":
-            np_gen_data = np.load(f'./out_{DATA}/gan_generated_data.npz', allow_pickle=True)
+            np_gen_data = np.load(f'./out_{DATA}/saved/gan_generated_data.npz', allow_pickle=True)
+
+        # baselines
+        elif model == "zip":
+            np_gen_data = np.load(f'./out_{DATA}/baseline/zip_generated_data.npz')
+        elif model == "hurdle":
+            np_gen_data = np.load(f'./out_{DATA}/baseline/hurdle_generated_data.npz')
+
         gen_data = np_gen_data['data']
         print(f"Generated data shape: {gen_data.shape}")
         gen_data = np.squeeze(gen_data)
@@ -165,64 +166,25 @@ def analyze_iot():
         print(f"Generated data shape: {gen_data.shape}")
 
         r_idx = np.random.randint(0, min(len(ori_data), len(gen_data)), size=5)
-        plot_sample_comparisons(ori_data[r_idx], gen_data[r_idx], save_path=f"./{results_dir}/{model}_sample_comparison.png")
+        plot_sample_comparisons(ori_data[r_idx], gen_data[r_idx], save_path=f"./{results_dir}/plot_samples/{model}_sample_comparison.png")
 
         metrics = calculate_evaluation_metrics(ori_data, gen_data)
         print_evaluation_metrics(metrics)
         save_metrics_report(metrics, f"./{results_dir}/{model}_metrics.json")
 
-        visualization_dim_red(model, ori_data, gen_data, "tsne", f"./{results_dir}/{model}_plot_tsne.png")
-        visualization_dim_red(model, ori_data, gen_data, "pca", f"./{results_dir}/{model}_plot_pca.png")
+        # visualization_dim_red(model, ori_data, gen_data, "umap", f"./{results_dir}/plot_embeddings/{model}_plot_umap.png")
+        # visualization_dim_red(model, ori_data, gen_data, "pca", f"./{results_dir}/plot_embeddings/{model}_plot_pca.png")
 
+def analyze_iot():
+    DATA = "iot"
+    np_ori_data = np.load(f'./data/{DATA}_durations_2021.npz')
+    analyze_data(DATA, np_ori_data)
 
 def analyze_m5():
     DATA = "m5"
     np_ori_data = np.load(f'./data/{DATA}/{DATA}_X_365.npz')
-    results_dir = f"results_{DATA}"
+    analyze_data(DATA, np_ori_data)
 
-    ori_data = np_ori_data['data']
-    print(f"Original data shape: {ori_data.shape}")
-    ori_data = np.squeeze(ori_data)
-    ori_data = np.nan_to_num(ori_data).astype(np.float64)
-    print(f"Original data shape: {ori_data.shape}")
-
-    for model in ["zits-gan", "zits-vae", "timegan", "transfusion", "fide", "chronogan", "tsgm_timegan", "tsgm_vae", "vae_dense", "vae_conv", "timeVAE"]:
-
-        print(f"=" * 60)
-        print(f"Model: {model}")
-        print(f"=" * 60)
-
-        if model == "chronogan":
-            np_gen_data = np.load(f'./repos/ChronoGAN/output_{DATA}/synthetic_data.npz', allow_pickle=True)
-        elif model == "fide":
-            np_gen_data = np.load(f'./repos/FIDE/Code/{DATA}_model/fide_generated_data.npz', allow_pickle=True)
-        elif model == "timegan":
-            np_gen_data = np.load(f'./repos/TimeGAN/{DATA}_{model}_generated_data.npz', allow_pickle=True)
-        elif model == "timeVAE" or model == "vae_dense" or model == "vae_conv":
-            np_gen_data = np.load(f'./repos/timeVAE/outputs/gen_data/m5_X_365/{model}_m5_X_365_prior_samples.npz')
-        elif model == "transfusion":
-            np_gen_data = np.load(f'./repos/TransFusion/saved_files/1771403691.0601-custom-transformers-{DATA}-l1-cosine-365-pred_v/test_outputs/synthetic_data_1771411195.npz', allow_pickle=True)
-        elif model == "tsgm_timegan" or model == "tsgm_vae":
-            np_gen_data = np.load(f'./repos/tsgm/{DATA}_results/{model}_gen.npz')
-        elif model == "zits-gan":
-            np_gen_data = np.load(f'./out_{DATA}/vae_generated_data.npz', allow_pickle=True)
-        elif model == "zits-vae":
-            np_gen_data = np.load(f'./out_{DATA}/gan_generated_data.npz', allow_pickle=True)
-
-        gen_data = np_gen_data['data']
-        print(f"Generated data shape: {gen_data.shape}")
-        gen_data = np.squeeze(gen_data)
-        gen_data = np.nan_to_num(gen_data).astype(np.float64)
-        print(f"Generated data shape: {gen_data.shape}")
-
-        plot_sample_comparisons(ori_data[1:6], gen_data[1:6], save_path=f"./{results_dir}/{model}_sample_comparison.png")
-
-        metrics = calculate_evaluation_metrics(ori_data, gen_data)
-        print_evaluation_metrics(metrics)
-        save_metrics_report(metrics, f"./{results_dir}/{model}_metrics.json")
-
-        visualization_dim_red(model, ori_data, gen_data, "tsne", f"./{results_dir}/{model}_plot_tsne.png")
-        visualization_dim_red(model, ori_data, gen_data, "pca", f"./{results_dir}/{model}_plot_pca.png")
 
 
 def aggregate_results(DATA=""):
@@ -276,7 +238,7 @@ def aggregate_results(DATA=""):
 
 
 if __name__ == "__main__":
-    # analyze_iot()
-    # aggregate_results("iot")
+    analyze_iot()
+    aggregate_results("iot")
     analyze_m5()
     aggregate_results("m5")

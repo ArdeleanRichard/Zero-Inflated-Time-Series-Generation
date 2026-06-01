@@ -34,4 +34,6 @@ MAP_MODEL_NAMES = {
     "vae_dense": "VAE-Dense",
     "vae_conv": "VAE-Conv",
     "timeVAE": "TimeVAE",
+    "zip": "ZIP ",
+    "hurdle": "Hurdle",
 }

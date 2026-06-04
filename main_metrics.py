@@ -15,8 +15,6 @@ from constants import MAP_MODEL_NAMES
 from metrics import (calculate_evaluation_metrics, print_evaluation_metrics, save_metrics_report)
 
 
-
-
 def plot_sample_comparisons(real_samples, synthetic_samples,num_samples = 5, save_path = 'sample_comparison.png'):
     """Plot comparison between real and synthetic samples"""
     fig, axes = plt.subplots(num_samples, 2, figsize=(15, 3 * num_samples))
@@ -165,8 +163,8 @@ def analyze_data(DATA, np_ori_data):
         gen_data = np.nan_to_num(gen_data).astype(np.float64)
         print(f"Generated data shape: {gen_data.shape}")
 
-        r_idx = np.random.randint(0, min(len(ori_data), len(gen_data)), size=5)
-        plot_sample_comparisons(ori_data[r_idx], gen_data[r_idx], save_path=f"./{results_dir}/plot_samples/{model}_sample_comparison.png")
+        # r_idx = np.random.randint(0, min(len(ori_data), len(gen_data)), size=5)
+        # plot_sample_comparisons(ori_data[r_idx], gen_data[r_idx], save_path=f"./{results_dir}/plot_samples/{model}_sample_comparison.png")
 
         metrics = calculate_evaluation_metrics(ori_data, gen_data)
         print_evaluation_metrics(metrics)
@@ -242,3 +240,6 @@ if __name__ == "__main__":
     aggregate_results("iot")
     analyze_m5()
     aggregate_results("m5")
+
+
+

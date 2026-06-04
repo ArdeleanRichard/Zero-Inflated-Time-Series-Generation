@@ -493,114 +493,6 @@ def train_test_divide_torch(data_x, data_x_hat, data_t, data_t_hat, train_rate=0
     return train_x, train_x_hat, test_x, test_x_hat
 
 
-def long_discriminative_score_metrics(ori_data, generated_data,
-    iterations = 100,
-    batch_size = 128,
-
-):
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
-    # Basic Parameters
-    no, seq_len, dim = np.asarray(ori_data).shape
-
-    # Set maximum sequence length and each sequence length
-    ori_time, ori_max_seq_len = extract_time(ori_data)
-    generated_time, generated_max_seq_len = extract_time(ori_data)
-
-    # Network parameters
-    hidden_dim = max((int(dim / 2), 1))
-
-    class Discriminator_GRU(nn.Module):
-        def __init__(self, dim, hidden_dim):
-            super(Discriminator_GRU, self).__init__()
-            self.p_cell = nn.GRU(dim, hidden_dim, batch_first=True)
-            self.fc = nn.Linear(hidden_dim, 1)
-
-        def forward(self, x):
-            _, d_last_states = self.p_cell(x)
-            y_hat_logit = self.fc(d_last_states)
-            y_hat = torch.sigmoid(y_hat_logit)
-            return y_hat_logit, y_hat
-
-    class Discriminator_Trans(nn.Module):
-        def __init__(self, num_tokens, feature_dim, hidden_dim=3, nhead=8, num_layers=1):
-            super(Discriminator_Trans, self).__init__()
-            self.projection = nn.Linear(feature_dim, hidden_dim)
-            self.positional_encoding = PositionalEncodingLDS(d_model=hidden_dim, dropout=0, max_len=num_tokens + 10)
-            encoder_block = nn.TransformerEncoderLayer(d_model=hidden_dim, nhead=nhead, batch_first=False)
-            self.transformer_encoder = nn.TransformerEncoder(encoder_block, num_layers=num_layers)
-            self.fc = nn.Linear(hidden_dim, 1)
-
-        def forward(self, x):
-            x = self.projection(x)
-            x = x.permute(1, 0, 2)
-            x = self.positional_encoding(x)
-            x = self.transformer_encoder(x)
-            x = x.permute(1, 0, 2)
-            x = torch.mean(x, dim=1, keepdim=True).permute(1, 0, 2)
-            y_hat_logit = self.fc(x)
-            y_hat = torch.sigmoid(y_hat_logit)
-            return y_hat_logit, y_hat
-
-    # model
-    discriminator = Discriminator_Trans(num_tokens=seq_len, feature_dim=dim, hidden_dim=8).to(device)
-
-    # optimizer
-    d_optimizer = torch.optim.Adam(discriminator.parameters())
-
-    # Train/test division for both original and generated data
-    train_x, train_x_hat, test_x, test_x_hat = \
-        train_test_divide_torch(ori_data, generated_data, ori_time, generated_time)
-
-    loss = nn.functional.binary_cross_entropy_with_logits
-
-    # Training step
-    for itt in tqdm(range(iterations)):
-        d_optimizer.zero_grad()
-
-        # Batch setting
-        no = len(train_x)
-        idx = torch.randperm(no)
-        train_idx = idx[:batch_size]
-        X_mb = torch.index_select(train_x, 0, train_idx)
-        no = len(train_x_hat)
-        idx = torch.randperm(no)
-        train_idx = idx[:batch_size]
-        X_hat_mb = torch.index_select(train_x_hat, 0, train_idx)
-
-        X_mb = X_mb.to(device)
-        X_hat_mb = X_hat_mb.to(device)
-
-        # model inference
-        y_logit_real, y_pred_real = discriminator(X_mb)
-        y_logit_fake, y_pred_fake = discriminator(X_hat_mb)
-
-        # loss calculation
-        d_loss_real = loss(y_logit_real, torch.ones_like(y_logit_real))
-        d_loss_fake = loss(y_logit_fake, torch.zeros_like(y_logit_fake))
-        d_loss = d_loss_real + d_loss_fake
-
-        d_loss.backward()
-        d_optimizer.step()
-
-    test_x = test_x.to(device)
-
-    test_x_hat = test_x_hat.to(device)
-
-    with torch.no_grad():
-        _, y_pred_real_curr = discriminator(test_x)
-        y_pred_real_curr = y_pred_real_curr.squeeze()
-        _, y_pred_fake_curr = discriminator(test_x_hat)
-        y_pred_fake_curr = y_pred_fake_curr.squeeze()
-
-    y_pred_final = torch.cat((y_pred_real_curr, y_pred_fake_curr), dim=0)
-    y_label_final = torch.cat((torch.ones([len(y_pred_real_curr), ]), torch.zeros([len(y_pred_fake_curr), ])), dim=0)
-
-    # Compute the accuracy
-    acc = accuracy_score(y_label_final.cpu().numpy(), (y_pred_final.cpu().numpy() > 0.5))
-    discriminative_score = np.abs(0.5 - acc)
-
-    return discriminative_score
 
 
 class PositionalEncodingLDS(nn.Module):
@@ -624,107 +516,6 @@ class PositionalEncodingLDS(nn.Module):
         x = x + self.pe[:x.size(0)]
         return self.dropout(x)
 
-
-def long_predictive_score_metrics(ori_data, generated_data,
-    iterations=100,
-    batch_size=128,
-):
-
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
-
-    # Basic Parameters
-    no, seq_len, dim = np.asarray(ori_data).shape
-
-    ## Builde a post-hoc RNN predictive network
-    # Network parameters
-    hidden_dim = max((int(dim / 2), 1))
-
-
-    class PredictorTransformer(nn.Module):
-        def __init__(self, in_features_dim, hidden_dim, seq_len, nhead=8):
-            super().__init__()
-            self.projection = nn.Linear(in_features_dim - 1, hidden_dim)
-            self.pos_encoding = PositionalEncodingLPS(
-                d_model=hidden_dim, dropout=0, max_len=seq_len + 1
-            )  # TODO: reduce seq+N
-            encoder_block = nn.TransformerEncoderLayer(
-                d_model=hidden_dim, nhead=hidden_dim, batch_first=False
-            )
-            self.transformer_encoder = nn.TransformerEncoder(
-                encoder_block, num_layers=1
-            )
-            self.fc = nn.Linear(hidden_dim, 1)
-
-        def forward(self, x):
-            x = self.projection(x)
-            x = x.permute(
-                1, 0, 2
-            )
-            x = self.pos_encoding(x)
-            x = self.transformer_encoder(x)
-            x = x.permute(1, 0, 2)
-            y_hat_logit = self.fc(x)
-            y_hat = torch.sigmoid(y_hat_logit)
-            return y_hat
-
-
-    model = PredictorTransformer(
-        in_features_dim=dim, hidden_dim=hidden_dim, seq_len=seq_len
-    ).to(device)
-
-    # Loss for the predictor
-    p_loss = nn.L1Loss()
-    # optimizer
-    p_optimizer = torch.optim.Adam(model.parameters())
-
-    batch_size = min((batch_size, len(generated_data)))
-
-    # Training
-    for itt in trange(iterations):
-        p_optimizer.zero_grad()
-        # Set mini-batch
-        idx = torch.randperm(len(generated_data))
-        train_idx = idx[:batch_size]
-
-        # selection of  batch with pytorch approach
-        X_mb = torch.index_select(generated_data[:, :-1, : (dim - 1)], 0, train_idx)
-        Y_mb = torch.index_select(generated_data[:, 1:, (dim - 1)], 0, train_idx)
-        Y_mb = Y_mb.reshape(batch_size, seq_len - 1, 1)
-
-        X_mb = X_mb.to(device)
-        Y_mb = Y_mb.to(device)
-
-        y_pred_mb = model(X_mb)
-        loss = p_loss(Y_mb, y_pred_mb)
-        loss.backward()
-        p_optimizer.step()
-
-
-
-    ## Test the trained model on the original data
-    idx = np.random.permutation(len(ori_data))
-    train_idx = idx[:no]
-
-    X_mb = list(ori_data[i][:-1, : (dim - 1)] for i in train_idx)
-    Y_mb = list(
-        np.reshape(ori_data[i][1:, (dim - 1)], [len(ori_data[i][1:, (dim - 1)]), 1])
-        for i in train_idx
-    )
-
-    model = model.to("cpu")
-    MAE_temp = 0
-    for i in range(no):
-        with torch.no_grad():
-
-            pred_Y_curr = model(X_mb[i].unsqueeze(0)).squeeze(0)
-            MAE_temp = MAE_temp + mean_absolute_error(
-                Y_mb[i].detach(), pred_Y_curr.detach()
-            )
-
-    predictive_score = MAE_temp / no
-
-    return predictive_score
 
 
 class PositionalEncodingLPS(nn.Module):
@@ -750,3 +541,325 @@ class PositionalEncodingLPS(nn.Module):
         seq_len, _, emb_dim = x.shape
         x = x + self.pe[:seq_len, :, :emb_dim]
         return self.dropout(x)
+
+
+
+
+
+def long_discriminative_score_metrics(
+    ori_data,
+    generated_data,
+    iterations=100,
+    batch_size=128,
+):
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    no, seq_len, dim = np.asarray(ori_data).shape
+
+    ori_time, ori_max_seq_len = extract_time(ori_data)
+
+    # FIX: this must use generated_data, not ori_data
+    generated_time, generated_max_seq_len = extract_time(generated_data)
+
+    hidden_dim = max(int(dim / 2), 1)
+
+    class Discriminator_GRU(nn.Module):
+        def __init__(self, dim, hidden_dim):
+            super(Discriminator_GRU, self).__init__()
+            self.p_cell = nn.GRU(dim, hidden_dim, batch_first=True)
+            self.fc = nn.Linear(hidden_dim, 1)
+
+        def forward(self, x):
+            _, d_last_states = self.p_cell(x)
+
+            # d_last_states shape: [num_layers, batch_size, hidden_dim]
+            # Use last layer only -> [batch_size, hidden_dim]
+            d_last_states = d_last_states[-1]
+
+            y_hat_logit = self.fc(d_last_states)  # [batch_size, 1]
+            y_hat = torch.sigmoid(y_hat_logit)
+
+            return y_hat_logit, y_hat
+
+    class Discriminator_Trans(nn.Module):
+        def __init__(
+            self,
+            num_tokens,
+            feature_dim,
+            hidden_dim=8,
+            nhead=8,
+            num_layers=1,
+        ):
+            super(Discriminator_Trans, self).__init__()
+
+            self.projection = nn.Linear(feature_dim, hidden_dim)
+
+            self.positional_encoding = PositionalEncodingLDS(
+                d_model=hidden_dim,
+                dropout=0,
+                max_len=num_tokens + 10,
+            )
+
+            encoder_block = nn.TransformerEncoderLayer(
+                d_model=hidden_dim,
+                nhead=nhead,
+                batch_first=False,
+            )
+
+            self.transformer_encoder = nn.TransformerEncoder(
+                encoder_block,
+                num_layers=num_layers,
+            )
+
+            self.fc = nn.Linear(hidden_dim, 1)
+
+        def forward(self, x):
+            # x shape: [batch_size, seq_len, feature_dim]
+            x = self.projection(x)  # [batch_size, seq_len, hidden_dim]
+
+            # Transformer expects [seq_len, batch_size, hidden_dim]
+            x = x.permute(1, 0, 2)
+
+            x = self.positional_encoding(x)
+            x = self.transformer_encoder(x)
+
+            # Back to [batch_size, seq_len, hidden_dim]
+            x = x.permute(1, 0, 2)
+
+            # Pool over time dimension
+            x = torch.mean(x, dim=1)  # [batch_size, hidden_dim]
+
+            y_hat_logit = self.fc(x)  # [batch_size, 1]
+            y_hat = torch.sigmoid(y_hat_logit)
+
+            return y_hat_logit, y_hat
+
+    discriminator = Discriminator_Trans(
+        num_tokens=seq_len,
+        feature_dim=dim,
+        hidden_dim=8,
+        nhead=8,
+        num_layers=1,
+    ).to(device)
+
+    d_optimizer = torch.optim.Adam(discriminator.parameters())
+
+    train_x, train_x_hat, test_x, test_x_hat = train_test_divide_torch(
+        ori_data,
+        generated_data,
+        ori_time,
+        generated_time,
+    )
+
+    loss = nn.functional.binary_cross_entropy_with_logits
+
+    discriminator.train()
+
+    for itt in tqdm(range(iterations)):
+        d_optimizer.zero_grad()
+
+        # Real batch
+        no_real = len(train_x)
+        idx_real = torch.randperm(no_real)
+        train_idx_real = idx_real[:batch_size]
+        X_mb = torch.index_select(train_x, 0, train_idx_real)
+
+        # Synthetic batch
+        no_fake = len(train_x_hat)
+        idx_fake = torch.randperm(no_fake)
+        train_idx_fake = idx_fake[:batch_size]
+        X_hat_mb = torch.index_select(train_x_hat, 0, train_idx_fake)
+
+        X_mb = X_mb.to(device)
+        X_hat_mb = X_hat_mb.to(device)
+
+        y_logit_real, y_pred_real = discriminator(X_mb)
+        y_logit_fake, y_pred_fake = discriminator(X_hat_mb)
+
+        d_loss_real = loss(
+            y_logit_real,
+            torch.ones_like(y_logit_real),
+        )
+
+        d_loss_fake = loss(
+            y_logit_fake,
+            torch.zeros_like(y_logit_fake),
+        )
+
+        d_loss = d_loss_real + d_loss_fake
+
+        d_loss.backward()
+        d_optimizer.step()
+
+    def eval_in_batches_disc(data_tensor, discriminator, device, batch_size):
+        all_preds = []
+        N = data_tensor.shape[0]
+
+        discriminator.eval()
+
+        with torch.no_grad():
+            for start in range(0, N, batch_size):
+                end = min(start + batch_size, N)
+
+                batch = data_tensor[start:end].to(device)
+
+                _, y_pred = discriminator(batch)
+
+                # Robustly convert [B, 1] into [B]
+                # Also works if model accidentally returns [1, B, 1]
+                y_pred = y_pred.reshape(-1).cpu()
+
+                all_preds.append(y_pred)
+
+        return torch.cat(all_preds, dim=0)
+
+    y_pred_real_curr = eval_in_batches_disc(
+        test_x,
+        discriminator,
+        device,
+        batch_size,
+    )
+
+    y_pred_fake_curr = eval_in_batches_disc(
+        test_x_hat,
+        discriminator,
+        device,
+        batch_size,
+    )
+
+    y_pred_final = torch.cat(
+        (
+            y_pred_real_curr,
+            y_pred_fake_curr,
+        ),
+        dim=0,
+    )
+
+    y_label_final = torch.cat(
+        (
+            torch.ones(len(y_pred_real_curr)),
+            torch.zeros(len(y_pred_fake_curr)),
+        ),
+        dim=0,
+    )
+
+    acc = accuracy_score(
+        y_label_final.cpu().numpy(),
+        y_pred_final.cpu().numpy() > 0.5,
+    )
+
+    discriminative_score = np.abs(0.5 - acc)
+
+    return discriminative_score
+
+
+def long_predictive_score_metrics(ori_data, generated_data,
+    iterations=100,
+    batch_size=128,
+):
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+    no, seq_len, dim = np.asarray(ori_data).shape
+
+    hidden_dim = max((int(dim / 2), 1))
+
+    class PredictorTransformer(nn.Module):
+        def __init__(self, in_features_dim, hidden_dim, seq_len, nhead=8):
+            super().__init__()
+            self.projection = nn.Linear(in_features_dim - 1, hidden_dim)
+            self.pos_encoding = PositionalEncodingLPS(
+                d_model=hidden_dim, dropout=0, max_len=seq_len + 1
+            )
+            encoder_block = nn.TransformerEncoderLayer(
+                d_model=hidden_dim, nhead=hidden_dim, batch_first=False
+            )
+            self.transformer_encoder = nn.TransformerEncoder(
+                encoder_block, num_layers=1
+            )
+            self.fc = nn.Linear(hidden_dim, 1)
+
+        def forward(self, x):
+            x = self.projection(x)
+            x = x.permute(1, 0, 2)
+            x = self.pos_encoding(x)
+            x = self.transformer_encoder(x)
+            x = x.permute(1, 0, 2)
+            y_hat_logit = self.fc(x)
+            y_hat = torch.sigmoid(y_hat_logit)
+            return y_hat
+
+    model = PredictorTransformer(
+        in_features_dim=dim, hidden_dim=hidden_dim, seq_len=seq_len
+    ).to(device)
+
+    p_loss = nn.L1Loss()
+    p_optimizer = torch.optim.Adam(model.parameters())
+
+    batch_size = min((batch_size, len(generated_data)))
+
+    for itt in trange(iterations):
+        p_optimizer.zero_grad()
+        idx = torch.randperm(len(generated_data))
+        train_idx = idx[:batch_size]
+
+        X_mb = torch.index_select(generated_data[:, :-1, : (dim - 1)], 0, train_idx)
+        Y_mb = torch.index_select(generated_data[:, 1:, (dim - 1)], 0, train_idx)
+        Y_mb = Y_mb.reshape(batch_size, seq_len - 1, 1)
+
+        X_mb = X_mb.to(device)
+        Y_mb = Y_mb.to(device)
+
+        y_pred_mb = model(X_mb)
+        loss = p_loss(Y_mb, y_pred_mb)
+        loss.backward()
+        p_optimizer.step()
+
+    # Batched evaluation
+    def eval_in_batches_pred(data, model, device, batch_size, dim, seq_len):
+        all_preds = []
+        all_targets = []
+        N = len(data)
+        model.eval()
+        for start in range(0, N, batch_size):
+            end = min(start + batch_size, N)
+            # Handle both tensor and numpy/list inputs
+            if isinstance(data, torch.Tensor):
+                batch = data[start:end]
+                X_mb = batch[:, :-1, :(dim - 1)].to(device)
+                Y_mb = batch[:, 1:, (dim - 1)].reshape(end - start, seq_len - 1, 1)
+            else:
+                X_mb = torch.stack([
+                    torch.tensor(data[i][:-1, :(dim - 1)], dtype=torch.float32)
+                    for i in range(start, end)
+                ]).to(device)
+                Y_mb = torch.stack([
+                    torch.tensor(
+                        np.reshape(data[i][1:, (dim - 1)], [len(data[i][1:, (dim - 1)]), 1]),
+                        dtype=torch.float32
+                    )
+                    for i in range(start, end)
+                ])
+            with torch.no_grad():
+                pred_Y = model(X_mb).cpu()
+            all_preds.append(pred_Y)
+            all_targets.append(Y_mb.cpu() if isinstance(Y_mb, torch.Tensor) else Y_mb)
+        return all_preds, all_targets
+
+    model.to(device)
+    all_preds, all_targets = eval_in_batches_pred(ori_data, model, device, batch_size, dim, seq_len)
+
+    MAE_temp = 0
+    count = 0
+    for preds_batch, targets_batch in zip(all_preds, all_targets):
+        for i in range(len(preds_batch)):
+            if isinstance(targets_batch, torch.Tensor):
+                target = targets_batch[i].detach().numpy()
+            else:
+                target = targets_batch[i]
+            pred = preds_batch[i].detach().numpy()
+            MAE_temp += mean_absolute_error(target, pred)
+            count += 1
+
+    predictive_score = MAE_temp / count
+
+    return predictive_score

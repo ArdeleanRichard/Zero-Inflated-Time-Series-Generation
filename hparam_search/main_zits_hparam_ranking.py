@@ -3,10 +3,10 @@ import numpy as np
 from rank_aggregator import RankAggregator
 
 # FILE_PATH = "./iot/hparam_search_iot_vae.csv"
-# FILE_PATH = "./iot/hparam_search_iot_gan.csv"
+FILE_PATH = "./iot/hparam_search_iot_gan.csv"
 
 # FILE_PATH = "./m5/hparam_search_m5_vae.csv"
-FILE_PATH = "./m5/hparam_search_m5_gan.csv"
+# FILE_PATH = "./m5/hparam_search_m5_gan.csv"
 
 
 
@@ -24,7 +24,7 @@ def col_for(metric):
 df = pd.read_csv(FILE_PATH)
 
 # Only keep param cols that actually exist in this CSV
-PARAM_COLS_CANDIDATES = ["run_id", "model", "data", "latent_dim", "lr", "betas_0",
+PARAM_COLS_CANDIDATES = ["run_id", "model", "data", "latent_dim", "lr", "beta", "betas_0",
                           "gate_weight", "recon_weight", "tc_weight", "fm_weight"]
 PARAM_COLS = [c for c in PARAM_COLS_CANDIDATES if c in df.columns]
 

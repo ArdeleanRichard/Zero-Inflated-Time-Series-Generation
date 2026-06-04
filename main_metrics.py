@@ -163,15 +163,15 @@ def analyze_data(DATA, np_ori_data):
         gen_data = np.nan_to_num(gen_data).astype(np.float64)
         print(f"Generated data shape: {gen_data.shape}")
 
-        # r_idx = np.random.randint(0, min(len(ori_data), len(gen_data)), size=5)
-        # plot_sample_comparisons(ori_data[r_idx], gen_data[r_idx], save_path=f"./{results_dir}/plot_samples/{model}_sample_comparison.png")
+        r_idx = np.random.randint(0, min(len(ori_data), len(gen_data)), size=5)
+        plot_sample_comparisons(ori_data[r_idx], gen_data[r_idx], save_path=f"./{results_dir}/plot_samples/{model}_sample_comparison.png")
 
         metrics = calculate_evaluation_metrics(ori_data, gen_data)
         print_evaluation_metrics(metrics)
         save_metrics_report(metrics, f"./{results_dir}/{model}_metrics.json")
 
-        # visualization_dim_red(model, ori_data, gen_data, "umap", f"./{results_dir}/plot_embeddings/{model}_plot_umap.png")
-        # visualization_dim_red(model, ori_data, gen_data, "pca", f"./{results_dir}/plot_embeddings/{model}_plot_pca.png")
+        visualization_dim_red(model, ori_data, gen_data, "umap", f"./{results_dir}/plot_embeddings/{model}_plot_umap.png")
+        visualization_dim_red(model, ori_data, gen_data, "pca", f"./{results_dir}/plot_embeddings/{model}_plot_pca.png")
 
 def analyze_iot():
     DATA = "iot"

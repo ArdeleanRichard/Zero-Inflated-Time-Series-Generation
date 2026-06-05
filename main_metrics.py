@@ -15,8 +15,6 @@ from constants import MAP_MODEL_NAMES
 from metrics import (calculate_evaluation_metrics, print_evaluation_metrics, save_metrics_report)
 
 
-
-
 def plot_sample_comparisons(real_samples, synthetic_samples,num_samples = 5, save_path = 'sample_comparison.png'):
     """Plot comparison between real and synthetic samples"""
     fig, axes = plt.subplots(num_samples, 2, figsize=(15, 3 * num_samples))
@@ -172,8 +170,8 @@ def analyze_data(DATA, np_ori_data):
         print_evaluation_metrics(metrics)
         save_metrics_report(metrics, f"./{results_dir}/{model}_metrics.json")
 
-        # visualization_dim_red(model, ori_data, gen_data, "umap", f"./{results_dir}/plot_embeddings/{model}_plot_umap.png")
-        # visualization_dim_red(model, ori_data, gen_data, "pca", f"./{results_dir}/plot_embeddings/{model}_plot_pca.png")
+        visualization_dim_red(model, ori_data, gen_data, "umap", f"./{results_dir}/plot_embeddings/{model}_plot_umap.png")
+        visualization_dim_red(model, ori_data, gen_data, "pca", f"./{results_dir}/plot_embeddings/{model}_plot_pca.png")
 
 def analyze_iot():
     DATA = "iot"
@@ -242,3 +240,6 @@ if __name__ == "__main__":
     # aggregate_results("iot")
     analyze_m5()
     aggregate_results("m5")
+
+
+

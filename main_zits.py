@@ -663,14 +663,28 @@ def main_test_gan(data, ori_data: np.ndarray, num_synthetic: int = 1000):
 # ===========================================================================
 
 if __name__ == "__main__":
+    ### Simple parameters
     # ori_data = load_iot_data()
     # main_train_vae("iot", ori_data, latent_dim=64, num_epochs=100, lr=1e-3, beta=0.3, gate_weight=5.0, recon_weight=10.0, tc_weight=1.0)
     # main_test_vae("iot", ori_data, num_synthetic=50000)
     # main_train_gan("iot", ori_data, latent_dim=64, num_epochs=100, lr=1e-4, betas=(0.0, 0.9), gate_weight=5.0, recon_weight=10.0, tc_weight=1.0, fm_weight=1.0)
     # main_test_gan("iot", ori_data, num_synthetic=50000)
+    #
+    # ori_data = load_m5_data()
+    # main_train_vae("m5", ori_data, latent_dim=64, num_epochs=100, lr=1e-3, beta=0.3, gate_weight=5.0, recon_weight=10.0, tc_weight=1.0)
+    # main_test_vae("m5", ori_data, num_synthetic=30000)
+    # main_train_gan("m5", ori_data, latent_dim=64, num_epochs=100, lr=1e-4, betas=(0.0, 0.9), gate_weight=5.0, recon_weight=10.0, tc_weight=1.0, fm_weight=1.0)
+    # main_test_gan("m5", ori_data, num_synthetic=30000)
+
+    ### Best parameters
+    ori_data = load_iot_data()
+    main_train_vae("iot", ori_data, latent_dim=128, num_epochs=100, lr=0.0005, beta=0.1, gate_weight=10.0, recon_weight=10.0, tc_weight=0.5)
+    main_test_vae("iot", ori_data, num_synthetic=50000)
+    main_train_gan("iot", ori_data, latent_dim=128, num_epochs=100, lr=0.0002, betas=(0.0, 0.9), gate_weight=10.0, recon_weight=10.0, tc_weight=0.5, fm_weight=1.0)
+    main_test_gan("iot", ori_data, num_synthetic=50000)
 
     ori_data = load_m5_data()
-    main_train_vae("m5", ori_data, latent_dim=64, num_epochs=100, lr=1e-3, beta=0.3, gate_weight=5.0, recon_weight=10.0, tc_weight=1.0)
+    main_train_vae("m5", ori_data, latent_dim=128, num_epochs=100, lr=0.0005, beta=0.1, gate_weight=10.0, recon_weight=10.0, tc_weight=0.5)
     main_test_vae("m5", ori_data, num_synthetic=30000)
-    main_train_gan("m5", ori_data, latent_dim=64, num_epochs=100, lr=1e-4, betas=(0.0, 0.9), gate_weight=5.0, recon_weight=10.0, tc_weight=1.0, fm_weight=1.0)
+    main_train_gan("m5", ori_data, latent_dim=128, num_epochs=100, lr=0.0002, betas=(0.0, 0.9), gate_weight=10.0, recon_weight=10.0, tc_weight=0.5, fm_weight=1.0)
     main_test_gan("m5", ori_data, num_synthetic=30000)

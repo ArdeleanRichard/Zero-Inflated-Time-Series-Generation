@@ -14,9 +14,6 @@
   "kurtosis_real": 284.5672229888064,
   "kurtosis_synthetic": 1.1316436335546607,
   "kurtosis_diff": 283.4355793552517,
-  "autocorr_mae": 0.08196663009314975,
-  "wasserstein_distance": 1.4688816923423378,
-  "kl_divergence": 0.5196299040449415,
   "quantile_10_diff": 0.0,
   "quantile_25_diff": 0.0,
   "quantile_50_diff": 0.0,
@@ -25,9 +22,12 @@
   "quantile_95_diff": 1.0,
   "quantile_99_diff": 8.0,
   "mean_quantile_diff": 1.7142857142857142,
-  "mmd": 0.0020000000208348578,
-  "ps": 1.4222919394155344,
-  "ds": 0.0,
-  "lps": 1.241022299796343,
-  "lds": 0.2925
+  "autocorr_mae": 0.08196663009314975,
+  "wasserstein_distance": 1.4688816923423378,
+  "kl_divergence": 0.5196299040449415,
+  "mmd": 0.002000000110046921,
+  "ps": 1.3225622863302628,
+  "ds": 0.020666666666666667,
+  "lps": 1.3925664931615194,
+  "lds": 0.4455
 }

@@ -324,7 +324,7 @@ def load_iot_data(verbose: bool = True) -> np.ndarray:
 
 def load_m5_data(verbose: bool = True) -> np.ndarray:
     data = np.load("./data/m5/m5_X_365.npy").astype(np.float32)
-    print("alo", np.min(data), np.max(data))
+
     if verbose:
         nz = data[data > 0]
         print(f"Dataset shape:    {data.shape}")

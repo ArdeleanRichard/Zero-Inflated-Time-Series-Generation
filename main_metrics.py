@@ -241,5 +241,3 @@ if __name__ == "__main__":
     analyze_m5()
     aggregate_results("m5")
 
-
-

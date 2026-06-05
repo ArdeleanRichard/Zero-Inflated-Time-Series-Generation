@@ -1,4 +1,6 @@
 # FIDE: Frequency-enhanced Implicit Diffusion for Extreme Event Generation
+https://github.com/galib19/FIDE
+
 
 This project implements a diffusion-based model for generating time series data with extreme events, using GEV (Generalized Extreme Value) distribution conditioning.
 

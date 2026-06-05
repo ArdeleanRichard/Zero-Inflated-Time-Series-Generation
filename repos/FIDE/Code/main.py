@@ -11,7 +11,7 @@ from tqdm import tqdm
 from constants import device, is_fit_AR, diffusion_steps, n_epochs, batch_size, is_regularizer, gp_sigma
 from data_process import fit_AR_model, load_iot_data, data_enhance_frequency, load_m5_data
 from general_utilities import (fitting_gev_and_sampling, plot_kde, KS_Test, CMD, KL_JS_divergence, CRPS)
-from model import TransformerModel
+from fide_model import TransformerModel
 from train_utilities import (get_betas, get_loss, plot_losses, sample)
 
 

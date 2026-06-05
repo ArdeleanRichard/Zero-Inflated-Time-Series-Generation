@@ -238,7 +238,7 @@ def aggregate_results(DATA=""):
 
 
 if __name__ == "__main__":
-    analyze_iot()
-    aggregate_results("iot")
+    # analyze_iot()
+    # aggregate_results("iot")
     analyze_m5()
     aggregate_results("m5")

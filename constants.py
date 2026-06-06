@@ -15,11 +15,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
 DATA_FOLDER      = "./data/"
-OUT_FOLDER       = "./out_m5/"
 SECONDS_PER_HOUR = 3600.0
 MAX_HOURS        = 24.0   # hard physical upper bound
-
-os.makedirs(OUT_FOLDER, exist_ok=True)
 
 
 MAP_MODEL_NAMES = {

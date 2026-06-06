@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from constants import device, OUT_FOLDER
+from constants import device
 from data_proc import (DataPreprocessor, CountDataPreprocessor, TimeSeriesDataset, load_iot_data, make_dataloaders, load_m5_data)
 from utils import plot_training_history, plot_sample_comparisons
 
@@ -663,28 +663,21 @@ def main_test_gan(data, ori_data: np.ndarray, num_synthetic: int = 1000):
 # ===========================================================================
 
 if __name__ == "__main__":
-    ### Simple parameters
-    # ori_data = load_iot_data()
-    # main_train_vae("iot", ori_data, latent_dim=64, num_epochs=100, lr=1e-3, beta=0.3, gate_weight=5.0, recon_weight=10.0, tc_weight=1.0)
-    # main_test_vae("iot", ori_data, num_synthetic=50000)
-    # main_train_gan("iot", ori_data, latent_dim=64, num_epochs=100, lr=1e-4, betas=(0.0, 0.9), gate_weight=5.0, recon_weight=10.0, tc_weight=1.0, fm_weight=1.0)
-    # main_test_gan("iot", ori_data, num_synthetic=50000)
-    #
-    # ori_data = load_m5_data()
-    # main_train_vae("m5", ori_data, latent_dim=64, num_epochs=100, lr=1e-3, beta=0.3, gate_weight=5.0, recon_weight=10.0, tc_weight=1.0)
-    # main_test_vae("m5", ori_data, num_synthetic=30000)
-    # main_train_gan("m5", ori_data, latent_dim=64, num_epochs=100, lr=1e-4, betas=(0.0, 0.9), gate_weight=5.0, recon_weight=10.0, tc_weight=1.0, fm_weight=1.0)
-    # main_test_gan("m5", ori_data, num_synthetic=30000)
-
     ### Best parameters
     ori_data = load_iot_data()
-    main_train_vae("iot", ori_data, latent_dim=128, num_epochs=100, lr=0.0005, beta=0.1, gate_weight=10.0, recon_weight=10.0, tc_weight=0.5)
-    main_test_vae("iot", ori_data, num_synthetic=50000)
-    main_train_gan("iot", ori_data, latent_dim=128, num_epochs=100, lr=0.0002, betas=(0.0, 0.9), gate_weight=10.0, recon_weight=10.0, tc_weight=0.5, fm_weight=1.0)
-    main_test_gan("iot", ori_data, num_synthetic=50000)
+    DATA = "iot"
+    OUT_FOLDER       = f"./out_{DATA}/"
+    os.makedirs(OUT_FOLDER, exist_ok=True)
+    main_train_vae(DATA, ori_data, latent_dim=128, num_epochs=100, lr=0.0005, beta=0.1, gate_weight=10.0, recon_weight=10.0, tc_weight=0.5)
+    main_test_vae(DATA, ori_data, num_synthetic=50000)
+    main_train_gan(DATA, ori_data, latent_dim=128, num_epochs=100, lr=0.0002, betas=(0.5, 0.9), gate_weight=1.0, recon_weight=10.0, tc_weight=0.0, fm_weight=0.5)
+    main_test_gan(DATA, ori_data, num_synthetic=50000)
 
     ori_data = load_m5_data()
-    main_train_vae("m5", ori_data, latent_dim=128, num_epochs=100, lr=0.0005, beta=0.1, gate_weight=10.0, recon_weight=10.0, tc_weight=0.5)
-    main_test_vae("m5", ori_data, num_synthetic=30000)
-    main_train_gan("m5", ori_data, latent_dim=128, num_epochs=100, lr=0.0002, betas=(0.0, 0.9), gate_weight=10.0, recon_weight=10.0, tc_weight=0.5, fm_weight=1.0)
-    main_test_gan("m5", ori_data, num_synthetic=30000)
+    DATA = "m5"
+    OUT_FOLDER       = f"./out_{DATA}/"
+    os.makedirs(OUT_FOLDER, exist_ok=True)
+    main_train_vae(DATA, ori_data, latent_dim=128, num_epochs=100, lr=0.0005, beta=1.0, gate_weight=5.0, recon_weight=5.0, tc_weight=0.0)
+    main_test_vae(DATA, ori_data, num_synthetic=30000)
+    main_train_gan(DATA, ori_data, latent_dim=128, num_epochs=100, lr=0.0001, betas=(0.0, 0.9), gate_weight=10.0, recon_weight=5.0, tc_weight=0.5, fm_weight=0.5)
+    main_test_gan(DATA, ori_data, num_synthetic=30000)

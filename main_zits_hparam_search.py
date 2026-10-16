@@ -26,8 +26,8 @@ from metrics import calculate_evaluation_metrics
 DATA         = "iot"       # "iot" or "m5"
 MODEL        = "both"      # "vae", "gan", or "both"
 MODE         = "random"    # "random" (sample N_TRIALS configs) or "grid" (exhaustive)
-N_TRIALS     = 30          # only used when MODE == "random"
-NUM_EPOCHS   = 80          # training budget per config (use ~40 for a quick sweep)
+N_TRIALS     = 25          # only used when MODE == "random"
+NUM_EPOCHS   = 50          # training budget per config (use ~40 for a quick sweep)
 NUM_SYNTHETIC = 5000       # synthetic samples generated for metric evaluation
 RESUME       = True        # True = skip configs already present in the CSV
 SEED         = 42

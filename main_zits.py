@@ -666,7 +666,7 @@ if __name__ == "__main__":
     ### Best parameters
     ori_data = load_iot_data()
     DATA = "iot"
-    OUT_FOLDER       = f"./out_{DATA}/"
+    OUT_FOLDER       = f"./results_{DATA}/"
     os.makedirs(OUT_FOLDER, exist_ok=True)
     main_train_vae(DATA, ori_data, latent_dim=128, num_epochs=100, lr=0.0005, beta=0.1, gate_weight=10.0, recon_weight=10.0, tc_weight=0.5)
     main_test_vae(DATA, ori_data, num_synthetic=50000)
@@ -675,7 +675,7 @@ if __name__ == "__main__":
 
     ori_data = load_m5_data()
     DATA = "m5"
-    OUT_FOLDER       = f"./out_{DATA}/"
+    OUT_FOLDER       = f"./results_{DATA}/"
     os.makedirs(OUT_FOLDER, exist_ok=True)
     main_train_vae(DATA, ori_data, latent_dim=128, num_epochs=100, lr=0.0005, beta=1.0, gate_weight=5.0, recon_weight=5.0, tc_weight=0.0)
     main_test_vae(DATA, ori_data, num_synthetic=30000)

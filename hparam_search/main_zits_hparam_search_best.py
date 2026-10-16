@@ -1,9 +1,9 @@
 import pandas as pd
 
 # FILE_PATH = "./iot/hparam_search_iot_gan.csv"
-FILE_PATH = "./iot/hparam_search_iot_vae.csv"
+# FILE_PATH = "./iot/hparam_search_iot_vae.csv"
 
-# FILE_PATH = "./m5/hparam_search_m5_gan.csv"
+FILE_PATH = "./m5/hparam_search_m5_gan.csv"
 # FILE_PATH = "./m5/hparam_search_m5_vae.csv"
 
 

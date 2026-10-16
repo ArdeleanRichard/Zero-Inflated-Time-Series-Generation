@@ -20,7 +20,7 @@ from metrics import calculate_evaluation_metrics
 
 
 # ===========================================================================
-# CONFIG — edit this block to control the search
+# CONFIG
 # ===========================================================================
 
 DATA         = "iot"       # "iot" or "m5"
@@ -33,7 +33,7 @@ RESUME       = True        # True = skip configs already present in the CSV
 SEED         = 42
 
 # ===========================================================================
-# Hyperparameter grids — add / remove values freely
+# Hyperparameter grids
 # ===========================================================================
 
 VAE_GRID = {
@@ -56,7 +56,7 @@ GAN_GRID = {
 }
 
 # ===========================================================================
-# Internals — no need to edit below
+# Internals 
 # ===========================================================================
 
 def _build_configs(grid, mode, n_trials):

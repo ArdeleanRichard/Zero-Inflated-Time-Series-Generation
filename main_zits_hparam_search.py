@@ -18,17 +18,19 @@ from main_zits import (
 )
 from metrics import calculate_evaluation_metrics
 
+torch.set_num_threads(4)  # fastest on this Mac in a thread benchmark (4 vs default 10)
+
 
 # ===========================================================================
 # CONFIG
 # ===========================================================================
 
-DATA         = "iot"       # "iot" or "m5"
+DATA         = "m5"        # "iot" or "m5"
 MODEL        = "both"      # "vae", "gan", or "both"
 MODE         = "random"    # "random" (sample N_TRIALS configs) or "grid" (exhaustive)
-N_TRIALS     = 25          # only used when MODE == "random"
-NUM_EPOCHS   = 50          # training budget per config (use ~40 for a quick sweep)
-NUM_SYNTHETIC = 5000       # synthetic samples generated for metric evaluation
+N_TRIALS     = 6           # only used when MODE == "random"
+NUM_EPOCHS   = 20          # training budget per config (use ~40 for a quick sweep)
+NUM_SYNTHETIC = 2000       # synthetic samples generated for metric evaluation
 RESUME       = True        # True = skip configs already present in the CSV
 SEED         = 42
 

@@ -1,0 +1,27 @@
+
+====================================================================================================
+
+SUMMARY TABLE
+====================================================================================================
+              metric  best_value  run_id    model data  latent_dim     lr  betas_0  gate_weight  recon_weight  tc_weight  fm_weight
+     zero_ratio_diff  0.00684122       0 zits-gan  iot          64 0.0001        0            5             1          0          2
+           mean_diff      726.81       5 zits-gan  iot         128 0.0002        0           10             5          1        0.5
+            std_diff     1216.32       2 zits-gan  iot          32  5e-05        0           10            10          2          2
+       skewness_diff    0.180668       2 zits-gan  iot          32  5e-05        0           10            10          2          2
+       kurtosis_diff    0.956174       0 zits-gan  iot          64 0.0001        0            5             1          0          2
+    quantile_10_diff           0       0 zits-gan  iot          64 0.0001        0            5             1          0          2
+    quantile_25_diff           0       0 zits-gan  iot          64 0.0001        0            5             1          0          2
+    quantile_50_diff           0       0 zits-gan  iot          64 0.0001        0            5             1          0          2
+    quantile_75_diff        1320       0 zits-gan  iot          64 0.0001        0            5             1          0          2
+    quantile_90_diff      2609.7       5 zits-gan  iot         128 0.0002        0           10             5          1        0.5
+    quantile_95_diff     2425.27       2 zits-gan  iot          32  5e-05        0           10            10          2          2
+    quantile_99_diff     2096.34       2 zits-gan  iot          32  5e-05        0           10            10          2          2
+  mean_quantile_diff     1538.43       5 zits-gan  iot         128 0.0002        0           10             5          1        0.5
+        autocorr_mae   0.0553235       0 zits-gan  iot          64 0.0001        0            5             1          0          2
+wasserstein_distance     1603.49       5 zits-gan  iot         128 0.0002        0           10             5          1        0.5
+       kl_divergence   0.0417719       5 zits-gan  iot         128 0.0002        0           10             5          1        0.5
+                 mmd       0.002       0 zits-gan  iot          64 0.0001        0            5             1          0          2
+                  ps     1435.04       4 zits-gan  iot          32  5e-05        0            5             5          1          2
+                  ds           0       0 zits-gan  iot          64 0.0001        0            5             1          0          2
+                 lps     1435.05       5 zits-gan  iot         128 0.0002        0           10             5          1        0.5
+                  ld      0.0425       5 zits-gan  iot         128 0.0002        0           10             5          1        0.5

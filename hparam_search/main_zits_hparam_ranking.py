@@ -10,11 +10,27 @@ FILE_PATH = "./m5/hparam_search_m5_gan.csv"
 
 
 METRICS = [
-    "zero_ratio_diff", "mean_diff", "std_diff", "skewness_diff", "kurtosis_diff",
-    "quantile_10_diff", "quantile_25_diff", "quantile_50_diff", "quantile_75_diff",
-    "quantile_90_diff", "quantile_95_diff", "quantile_99_diff", "mean_quantile_diff",
-    "autocorr_mae", "wasserstein_distance", "kl_divergence", "mmd",
-    "ps", "ds", "lps", "ld",
+    "zero_ratio_diff",
+    "mean_diff",
+    "std_diff",
+    "skewness_diff",
+    "kurtosis_diff",
+    # "quantile_10_diff",
+    # "quantile_25_diff",
+    # "quantile_50_diff",
+    # "quantile_75_diff",
+    # "quantile_90_diff",
+    # "quantile_95_diff",
+    # "quantile_99_diff",
+    "mean_quantile_diff",
+    "autocorr_mae",
+    "wasserstein_distance",
+    "kl_divergence",
+    "mmd",
+    "ps",
+    "ds",
+    "lps",
+    "lds",
 ]
 
 def col_for(metric):

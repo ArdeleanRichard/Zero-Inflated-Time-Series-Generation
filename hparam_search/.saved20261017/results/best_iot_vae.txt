@@ -1,0 +1,27 @@
+
+====================================================================================================
+
+SUMMARY TABLE
+====================================================================================================
+              metric  best_value  run_id    model data  latent_dim     lr  gate_weight  recon_weight  tc_weight
+     zero_ratio_diff  0.00141108       2 zits-vae  iot          32  0.001            1             1          2
+           mean_diff     4137.99       1 zits-vae  iot          32 0.0005           10             5          0
+            std_diff     8664.84       1 zits-vae  iot          32 0.0005           10             5          0
+       skewness_diff    0.386965       1 zits-vae  iot          32 0.0005           10             5          0
+       kurtosis_diff     3.84908       1 zits-vae  iot          32 0.0005           10             5          0
+    quantile_10_diff           0       0 zits-vae  iot         128  0.001            1            20        0.5
+    quantile_25_diff           0       0 zits-vae  iot         128  0.001            1            20        0.5
+    quantile_50_diff           0       0 zits-vae  iot         128  0.001            1            20        0.5
+    quantile_75_diff     2949.09       1 zits-vae  iot          32 0.0005           10             5          0
+    quantile_90_diff     16826.3       1 zits-vae  iot          32 0.0005           10             5          0
+    quantile_95_diff     25442.6       1 zits-vae  iot          32 0.0005           10             5          0
+    quantile_99_diff     38449.4       1 zits-vae  iot          32 0.0005           10             5          0
+  mean_quantile_diff     11952.5       1 zits-vae  iot          32 0.0005           10             5          0
+        autocorr_mae   0.0465579       2 zits-vae  iot          32  0.001            1             1          2
+wasserstein_distance     16465.6       1 zits-vae  iot          32 0.0005           10             5          0
+       kl_divergence    0.935217       1 zits-vae  iot          32 0.0005           10             5          0
+                 mmd       0.002       1 zits-vae  iot          32 0.0005           10             5          0
+                  ps     1435.14       3 zits-vae  iot         128 0.0005            5            20          1
+                  ds           0       0 zits-vae  iot         128  0.001            1            20        0.5
+                 lps     1435.15       3 zits-vae  iot         128 0.0005            5            20          1
+                  ld     0.03125       4 zits-vae  iot          32 0.0001           10             1          2

@@ -1,0 +1,27 @@
+
+====================================================================================================
+
+SUMMARY TABLE
+====================================================================================================
+              metric  best_value  run_id    model data  latent_dim     lr  gate_weight  recon_weight  tc_weight
+     zero_ratio_diff  0.00202183       4 zits-vae   m5          32 0.0001           10             1          2
+           mean_diff    0.638196       1 zits-vae   m5          32 0.0005           10             5          0
+            std_diff     0.24861       4 zits-vae   m5          32 0.0001           10             1          2
+       skewness_diff     9.45441       3 zits-vae   m5         128 0.0005            5            20          1
+       kurtosis_diff     280.351       3 zits-vae   m5         128 0.0005            5            20          1
+    quantile_10_diff           0       0 zits-vae   m5         128  0.001            1            20        0.5
+    quantile_25_diff           0       0 zits-vae   m5         128  0.001            1            20        0.5
+    quantile_50_diff           0       0 zits-vae   m5         128  0.001            1            20        0.5
+    quantile_75_diff           3       1 zits-vae   m5          32 0.0005           10             5          0
+    quantile_90_diff           3       1 zits-vae   m5          32 0.0005           10             5          0
+    quantile_95_diff           2       1 zits-vae   m5          32 0.0005           10             5          0
+    quantile_99_diff           2       4 zits-vae   m5          32 0.0001           10             1          2
+  mean_quantile_diff     1.71429       1 zits-vae   m5          32 0.0005           10             5          0
+        autocorr_mae   0.0583854       3 zits-vae   m5         128 0.0005            5            20          1
+wasserstein_distance     2.24962       1 zits-vae   m5          32 0.0005           10             5          0
+       kl_divergence    0.231488       1 zits-vae   m5          32 0.0005           10             5          0
+                 mmd       0.002       3 zits-vae   m5         128 0.0005            5            20          1
+                  ps     1.09744       3 zits-vae   m5         128 0.0005            5            20          1
+                  ds           0       0 zits-vae   m5         128  0.001            1            20        0.5
+                 lps     1.08616       3 zits-vae   m5         128 0.0005            5            20          1
+                  ld      0.4225       1 zits-vae   m5          32 0.0005           10             5          0

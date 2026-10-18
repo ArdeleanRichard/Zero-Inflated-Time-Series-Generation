@@ -31,7 +31,7 @@ METRICS = [
     "ps",
     "ds",
     "lps",
-    "ld",        # stored as metric__lds
+    "lds",        # stored as metric__lds
 ]
 
 

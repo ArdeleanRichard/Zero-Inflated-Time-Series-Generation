@@ -108,6 +108,82 @@ def visualization_dim_red(model, ori_data, gen_data, analysis="tsne", save_path=
             plt.show()
 
 
+def _run_length_counts(data):
+    """Count contiguous zero and nonzero runs across a collection of series."""
+    data = np.asarray(data)
+    if data.ndim == 1:
+        data = data[np.newaxis, :]
+    if data.ndim != 2:
+        raise ValueError(f"Expected time series data with 1 or 2 dimensions, got shape {data.shape}")
+
+    counts = {
+        "zero": np.zeros(data.shape[1] + 1, dtype=np.int64),
+        "nonzero": np.zeros(data.shape[1] + 1, dtype=np.int64),
+    }
+    for series in data:
+        if series.size == 0:
+            continue
+        is_zero = series == 0
+        boundaries = np.flatnonzero(np.diff(is_zero.astype(np.int8))) + 1
+        starts = np.concatenate(([0], boundaries))
+        ends = np.concatenate((boundaries, [series.size]))
+        run_lengths = ends - starts
+        run_types = np.where(is_zero[starts], "zero", "nonzero")
+        for run_type in ("zero", "nonzero"):
+            counts[run_type] += np.bincount(
+                run_lengths[run_types == run_type],
+                minlength=data.shape[1] + 1,
+            )
+    return {run_type: run_counts[1:] for run_type, run_counts in counts.items()}
+
+
+def _run_length_records(dataset, model, counts):
+    records = []
+    for segment, run_counts in counts.items():
+        total_runs = int(run_counts.sum())
+        if total_runs == 0:
+            continue
+        for run_length in np.flatnonzero(run_counts) + 1:
+            count = int(run_counts[run_length - 1])
+            records.append({
+                "dataset": dataset,
+                "model": model,
+                "segment": segment,
+                "run_length": int(run_length),
+                "count": count,
+                "proportion": count / total_runs,
+            })
+    return records
+
+
+def _plot_run_length_cdfs(model, real_counts, synthetic_counts, save_path):
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5), sharey=True)
+    for ax, segment in zip(axes, ("zero", "nonzero")):
+        for label, counts in (("Real", real_counts[segment]),
+                              ("Synthetic", synthetic_counts[segment])):
+            total_runs = counts.sum()
+            if total_runs == 0:
+                continue
+            run_lengths = np.flatnonzero(counts) + 1
+            cumulative_proportion = np.cumsum(counts[counts > 0]) / total_runs
+            x_values = np.concatenate(([0.5], run_lengths, [run_lengths[-1] + 1]))
+            y_values = np.concatenate(([0.0], cumulative_proportion, [1.0]))
+            ax.step(x_values, y_values, where="post", label=label)
+
+        ax.set_xscale("log")
+        ax.set_xlabel("Run length (time steps)")
+        ax.set_title(f"{segment.capitalize()} runs")
+        ax.set_ylim(0, 1)
+        ax.grid(True, alpha=0.3)
+        if ax.lines:
+            ax.legend()
+
+    axes[0].set_ylabel("Cumulative proportion of runs")
+    fig.suptitle(f"{MAP_MODEL_NAMES[model]}: run-length distributions")
+    fig.tight_layout()
+    fig.savefig(save_path, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+
 
 def analyze_data(DATA, np_ori_data):
 
@@ -118,6 +194,11 @@ def analyze_data(DATA, np_ori_data):
     ori_data = np.squeeze(ori_data)
     ori_data = np.nan_to_num(ori_data).astype(np.float64)
     print(f"Original data shape: {ori_data.shape}")
+
+    run_length_dir = os.path.join(results_dir, "run_length_distributions")
+    os.makedirs(run_length_dir, exist_ok=True)
+    real_run_counts = _run_length_counts(ori_data)
+    run_length_records = _run_length_records(DATA, "real", real_run_counts)
 
     for model in ["zip", "hurdle", "zits-gan", "zits-vae", "timegan", "transfusion", "fide", "chronogan", "tsgm_timegan", "tsgm_vae", "vae_dense", "vae_conv", "timeVAE"]:
 
@@ -147,15 +228,15 @@ def analyze_data(DATA, np_ori_data):
         elif model == "tsgm_timegan" or model == "tsgm_vae":
             np_gen_data = np.load(f'./repos/tsgm/{DATA}_results/{model}_gen.npz')
         elif model == "zits-gan":
-            np_gen_data = np.load(f'./out_{DATA}/saved/vae_generated_data.npz', allow_pickle=True)
+            np_gen_data = np.load(f'./results_{DATA}/saved/vae_generated_data.npz', allow_pickle=True)
         elif model == "zits-vae":
-            np_gen_data = np.load(f'./out_{DATA}/saved/gan_generated_data.npz', allow_pickle=True)
+            np_gen_data = np.load(f'./results_{DATA}/saved/gan_generated_data.npz', allow_pickle=True)
 
         # baselines
         elif model == "zip":
-            np_gen_data = np.load(f'./out_{DATA}/baseline/zip_generated_data.npz')
+            np_gen_data = np.load(f'./results_{DATA}/baseline/zip_generated_data.npz')
         elif model == "hurdle":
-            np_gen_data = np.load(f'./out_{DATA}/baseline/hurdle_generated_data.npz')
+            np_gen_data = np.load(f'./results_{DATA}/baseline/hurdle_generated_data.npz')
 
         gen_data = np_gen_data['data']
         print(f"Generated data shape: {gen_data.shape}")
@@ -163,15 +244,30 @@ def analyze_data(DATA, np_ori_data):
         gen_data = np.nan_to_num(gen_data).astype(np.float64)
         print(f"Generated data shape: {gen_data.shape}")
 
+        synthetic_run_counts = _run_length_counts(gen_data)
+        run_length_records.extend(_run_length_records(DATA, model, synthetic_run_counts))
+        _plot_run_length_cdfs(
+            model,
+            real_run_counts,
+            synthetic_run_counts,
+            os.path.join(run_length_dir, f"{model}_run_length_cdf.png"),
+        )
+
         r_idx = np.random.randint(0, min(len(ori_data), len(gen_data)), size=5)
         plot_sample_comparisons(ori_data[r_idx], gen_data[r_idx], save_path=f"./{results_dir}/plot_samples/{model}_sample_comparison.png")
 
         metrics = calculate_evaluation_metrics(ori_data, gen_data)
-        print_evaluation_metrics(metrics)
+        # print_evaluation_metrics(metrics)
         save_metrics_report(metrics, f"./{results_dir}/{model}_metrics.json")
 
-        visualization_dim_red(model, ori_data, gen_data, "umap", f"./{results_dir}/plot_embeddings/{model}_plot_umap.png")
-        visualization_dim_red(model, ori_data, gen_data, "pca", f"./{results_dir}/plot_embeddings/{model}_plot_pca.png")
+        # visualization_dim_red(model, ori_data, gen_data, "umap", f"./{results_dir}/plot_embeddings/{model}_plot_umap.png")
+        # visualization_dim_red(model, ori_data, gen_data, "pca", f"./{results_dir}/plot_embeddings/{model}_plot_pca.png")
+
+    pd.DataFrame(run_length_records).to_csv(
+        os.path.join(results_dir, "run_length_distributions.csv"),
+        index=False,
+    )
+
 
 def analyze_iot():
     DATA = "iot"
@@ -236,8 +332,7 @@ def aggregate_results(DATA=""):
 
 
 if __name__ == "__main__":
-    # analyze_iot()
+    analyze_iot()
     # aggregate_results("iot")
     analyze_m5()
-    aggregate_results("m5")
-
+    # aggregate_results("m5")

@@ -29,8 +29,8 @@ DATA         = "m5"        # "iot" or "m5"
 MODEL        = "both"      # "vae", "gan", or "both"
 MODE         = "random"    # "random" (sample N_TRIALS configs) or "grid" (exhaustive)
 N_TRIALS     = 6           # only used when MODE == "random"
-NUM_EPOCHS   = 20          # training budget per config (use ~40 for a quick sweep)
-NUM_SYNTHETIC = 2000       # synthetic samples generated for metric evaluation
+NUM_EPOCHS   = 80          # training budget per config (use ~40 for a quick sweep)
+NUM_SYNTHETIC = 5000       # synthetic samples generated for metric evaluation
 RESUME       = True        # True = skip configs already present in the CSV
 SEED         = 42
 

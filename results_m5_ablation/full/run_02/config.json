@@ -1,0 +1,15 @@
+{
+  "ablation": "full",
+  "seed": 44,
+  "latent_dim": 32,
+  "epochs": 25,
+  "batch_size": 128,
+  "lr": 0.001,
+  "beta": 0.3,
+  "gate_weight": 5.0,
+  "recon_weight": 10.0,
+  "tc_weight": 1.0,
+  "use_gate_head": true,
+  "use_mag_head": true,
+  "use_dilated": true
+}

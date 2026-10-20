@@ -122,128 +122,128 @@ def calculate_evaluation_metrics(real_data, synthetic_data, iterations=100, batc
     metrics['zero_ratio_synthetic'] = synth_zero_ratio
     metrics['zero_ratio_diff'] = abs(real_zero_ratio - synth_zero_ratio)
     metrics['run_length_wasserstein'] = run_length_wasserstein(real_data, synthetic_data)
-    #
-    # # 2. Statistical moments
-    # metrics['mean_real'] = np.mean(real_data)
-    # metrics['mean_synthetic'] = np.mean(synthetic_data)
-    # metrics['mean_diff'] = abs(np.mean(real_data) - np.mean(synthetic_data))
-    #
-    # metrics['std_real'] = np.std(real_data)
-    # metrics['std_synthetic'] = np.std(synthetic_data)
-    # metrics['std_diff'] = abs(np.std(real_data) - np.std(synthetic_data))
-    #
-    # metrics['skewness_real'] = stats.skew(real_data.flatten())
-    # metrics['skewness_synthetic'] = stats.skew(synthetic_data.flatten())
-    # metrics['skewness_diff'] = abs(stats.skew(real_data.flatten()) - stats.skew(synthetic_data.flatten()))
-    #
-    # metrics['kurtosis_real'] = stats.kurtosis(real_data.flatten())
-    # metrics['kurtosis_synthetic'] = stats.kurtosis(synthetic_data.flatten())
-    # metrics['kurtosis_diff'] = abs(stats.kurtosis(real_data.flatten()) - stats.kurtosis(synthetic_data.flatten()))
-    #
-    #
-    # # 4. Quantile comparison
-    # quantiles = [0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]
-    # quantile_diffs = []
-    # for q in quantiles:
-    #     real_q = np.quantile(real_data, q)
-    #     synth_q = np.quantile(synthetic_data, q)
-    #     quantile_diffs.append(abs(real_q - synth_q))
-    #     metrics[f'quantile_{int(q * 100)}_diff'] = abs(real_q - synth_q)
-    #
-    # metrics['mean_quantile_diff'] = np.mean(quantile_diffs)
-    #
-    #
-    # # 3. Temporal metrics
-    # # Autocorrelation at different lags
-    # def compute_autocorr(data, max_lag=10):
-    #     autocorrs = []
-    #     for lag in range(1, max_lag + 1):
-    #         correlations = []
-    #         for series in data:
-    #             if len(series) > lag:
-    #                 corr = np.corrcoef(series[:-lag], series[lag:])[0, 1]
-    #                 if not np.isnan(corr):
-    #                     correlations.append(corr)
-    #         if correlations:
-    #             autocorrs.append(np.mean(correlations))
-    #     return np.array(autocorrs)
-    #
-    # real_autocorr = compute_autocorr(real_data)
-    # synth_autocorr = compute_autocorr(synthetic_data)
-    # # Align lengths in case one array is shorter/empty (e.g. all-NaN from constant sequences)
-    # min_len = min(len(real_autocorr), len(synth_autocorr))
-    # if min_len == 0:
-    #     metrics['autocorr_mae'] = np.nan
-    # else:
-    #     metrics['autocorr_mae'] = np.mean(np.abs(real_autocorr[:min_len] - synth_autocorr[:min_len]))
-    #
-    #
-    # # Non-zero statistics
-    # real_nonzero = real_data[real_data > 0]
-    # synth_nonzero = synthetic_data[synthetic_data > 0]
-    #
-    # if len(real_nonzero) > 0 and len(synth_nonzero) > 0:
-    #     # Wasserstein distance (Earth Mover's Distance)
-    #     # Lower is better, measures distribution similarity
-    #     metrics['wasserstein_distance'] = wasserstein_distance(real_nonzero.flatten(), synth_nonzero.flatten())
-    #
-    #     # KL divergence approximation
-    #     try:
-    #         # hist_real, bins = np.histogram(real_nonzero, bins=50, density=True)
-    #         # hist_synth, _ = np.histogram(synth_nonzero, bins=bins, density=True)
-    #         # hist_real = hist_real + 1e-10  # Avoid log(0)
-    #         # hist_synth = hist_synth + 1e-10
-    #         # metrics['kl_divergence'] = np.sum(hist_real * np.log(hist_real / hist_synth))
-    #         metrics['kl_divergence'] = kl_divergence_from_samples(real_nonzero.flatten(), synth_nonzero.flatten(), bins=50, eps=1e-10)
-    #
-    #     except:
-    #         metrics['kl_divergence'] = np.nan
-    #
-    # # 5. Maximum Mean Discrepancy (MMD)
-    # # Simplified RBF kernel-based MMD
-    # def compute_mmd(x, y, kernel='rbf', gamma=1.0):
-    #     x = np.asarray(x, dtype=np.float64)
-    #     y = np.asarray(y, dtype=np.float64)
-    #
-    #     xx = np.dot(x, x.T)
-    #     yy = np.dot(y, y.T)
-    #     xy = np.dot(x, y.T)
-    #
-    #     rx = np.diag(xx).reshape(-1, 1)
-    #     ry = np.diag(yy).reshape(-1, 1)
-    #
-    #     K_xx = np.exp(-gamma * (rx + rx.T - 2 * xx))
-    #     K_yy = np.exp(-gamma * (ry + ry.T - 2 * yy))
-    #     K_xy = np.exp(-gamma * (rx + ry.T - 2 * xy))
-    #
-    #     return np.mean(K_xx) + np.mean(K_yy) - 2 * np.mean(K_xy)
-    #
-    # # Sample for computational efficiency
-    # sample_size = min(1000, len(real_data), len(synthetic_data))
-    # real_sample = real_data[np.random.choice(len(real_data), sample_size, replace=False)]
-    # synth_sample = synthetic_data[np.random.choice(len(synthetic_data), sample_size, replace=False)]
-    #
-    # metrics['mmd'] = compute_mmd(real_sample, synth_sample)
-    #
-    # min_len = min(len(real_data), len(synthetic_data))
-    # real_data = real_data[:min_len]
-    # synthetic_data = synthetic_data[:min_len]
-    #
-    # real_data = real_data[..., np.newaxis]
-    # synthetic_data = synthetic_data[..., np.newaxis]
-    #
-    # real_data = torch.from_numpy(real_data).float()
-    # synthetic_data = torch.from_numpy(synthetic_data).float()
-    #
-    # metrics['ps'] = predictive_score_metrics(real_data, synthetic_data, iterations=iterations, batch_size=batch_size)
-    # metrics['ds'] = discriminative_score_metrics(real_data, synthetic_data, iterations=iterations, batch_size=batch_size)
-    #
-    # metrics['lps'] = long_predictive_score_metrics(real_data, synthetic_data, iterations=iterations, batch_size=batch_size)
-    # metrics['lds'] = long_discriminative_score_metrics(real_data, synthetic_data, iterations=iterations, batch_size=batch_size)
-    #
-    # # subset = 1000
-    # # metrics['lps'] = long_predictive_score_metrics(real_data[:subset], synthetic_data[:subset], iterations=iterations, batch_size=batch_size)
-    # # metrics['lds'] = long_discriminative_score_metrics(real_data[:subset], synthetic_data[:subset], iterations=iterations, batch_size=batch_size)
+    
+    # 2. Statistical moments
+    metrics['mean_real'] = np.mean(real_data)
+    metrics['mean_synthetic'] = np.mean(synthetic_data)
+    metrics['mean_diff'] = abs(np.mean(real_data) - np.mean(synthetic_data))
+    
+    metrics['std_real'] = np.std(real_data)
+    metrics['std_synthetic'] = np.std(synthetic_data)
+    metrics['std_diff'] = abs(np.std(real_data) - np.std(synthetic_data))
+    
+    metrics['skewness_real'] = stats.skew(real_data.flatten())
+    metrics['skewness_synthetic'] = stats.skew(synthetic_data.flatten())
+    metrics['skewness_diff'] = abs(stats.skew(real_data.flatten()) - stats.skew(synthetic_data.flatten()))
+    
+    metrics['kurtosis_real'] = stats.kurtosis(real_data.flatten())
+    metrics['kurtosis_synthetic'] = stats.kurtosis(synthetic_data.flatten())
+    metrics['kurtosis_diff'] = abs(stats.kurtosis(real_data.flatten()) - stats.kurtosis(synthetic_data.flatten()))
+    
+    
+    # 4. Quantile comparison
+    quantiles = [0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]
+    quantile_diffs = []
+    for q in quantiles:
+        real_q = np.quantile(real_data, q)
+        synth_q = np.quantile(synthetic_data, q)
+        quantile_diffs.append(abs(real_q - synth_q))
+        metrics[f'quantile_{int(q * 100)}_diff'] = abs(real_q - synth_q)
+    
+    metrics['mean_quantile_diff'] = np.mean(quantile_diffs)
+    
+    
+    # 3. Temporal metrics
+    # Autocorrelation at different lags
+    def compute_autocorr(data, max_lag=10):
+        autocorrs = []
+        for lag in range(1, max_lag + 1):
+            correlations = []
+            for series in data:
+                if len(series) > lag:
+                    corr = np.corrcoef(series[:-lag], series[lag:])[0, 1]
+                    if not np.isnan(corr):
+                        correlations.append(corr)
+            if correlations:
+                autocorrs.append(np.mean(correlations))
+        return np.array(autocorrs)
+    
+    real_autocorr = compute_autocorr(real_data)
+    synth_autocorr = compute_autocorr(synthetic_data)
+    # Align lengths in case one array is shorter/empty (e.g. all-NaN from constant sequences)
+    min_len = min(len(real_autocorr), len(synth_autocorr))
+    if min_len == 0:
+        metrics['autocorr_mae'] = np.nan
+    else:
+        metrics['autocorr_mae'] = np.mean(np.abs(real_autocorr[:min_len] - synth_autocorr[:min_len]))
+    
+    
+    # Non-zero statistics
+    real_nonzero = real_data[real_data > 0]
+    synth_nonzero = synthetic_data[synthetic_data > 0]
+    
+    if len(real_nonzero) > 0 and len(synth_nonzero) > 0:
+        # Wasserstein distance (Earth Mover's Distance)
+        # Lower is better, measures distribution similarity
+        metrics['wasserstein_distance'] = wasserstein_distance(real_nonzero.flatten(), synth_nonzero.flatten())
+    
+        # KL divergence approximation
+        try:
+            # hist_real, bins = np.histogram(real_nonzero, bins=50, density=True)
+            # hist_synth, _ = np.histogram(synth_nonzero, bins=bins, density=True)
+            # hist_real = hist_real + 1e-10  # Avoid log(0)
+            # hist_synth = hist_synth + 1e-10
+            # metrics['kl_divergence'] = np.sum(hist_real * np.log(hist_real / hist_synth))
+            metrics['kl_divergence'] = kl_divergence_from_samples(real_nonzero.flatten(), synth_nonzero.flatten(), bins=50, eps=1e-10)
+    
+        except:
+            metrics['kl_divergence'] = np.nan
+    
+    # 5. Maximum Mean Discrepancy (MMD)
+    # Simplified RBF kernel-based MMD
+    def compute_mmd(x, y, kernel='rbf', gamma=1.0):
+        x = np.asarray(x, dtype=np.float64)
+        y = np.asarray(y, dtype=np.float64)
+    
+        xx = np.dot(x, x.T)
+        yy = np.dot(y, y.T)
+        xy = np.dot(x, y.T)
+    
+        rx = np.diag(xx).reshape(-1, 1)
+        ry = np.diag(yy).reshape(-1, 1)
+    
+        K_xx = np.exp(-gamma * (rx + rx.T - 2 * xx))
+        K_yy = np.exp(-gamma * (ry + ry.T - 2 * yy))
+        K_xy = np.exp(-gamma * (rx + ry.T - 2 * xy))
+    
+        return np.mean(K_xx) + np.mean(K_yy) - 2 * np.mean(K_xy)
+    
+    # Sample for computational efficiency
+    sample_size = min(1000, len(real_data), len(synthetic_data))
+    real_sample = real_data[np.random.choice(len(real_data), sample_size, replace=False)]
+    synth_sample = synthetic_data[np.random.choice(len(synthetic_data), sample_size, replace=False)]
+    
+    metrics['mmd'] = compute_mmd(real_sample, synth_sample)
+    
+    min_len = min(len(real_data), len(synthetic_data))
+    real_data = real_data[:min_len]
+    synthetic_data = synthetic_data[:min_len]
+    
+    real_data = real_data[..., np.newaxis]
+    synthetic_data = synthetic_data[..., np.newaxis]
+    
+    real_data = torch.from_numpy(real_data).float()
+    synthetic_data = torch.from_numpy(synthetic_data).float()
+    
+    metrics['ps'] = predictive_score_metrics(real_data, synthetic_data, iterations=iterations, batch_size=batch_size)
+    metrics['ds'] = discriminative_score_metrics(real_data, synthetic_data, iterations=iterations, batch_size=batch_size)
+    
+    metrics['lps'] = long_predictive_score_metrics(real_data, synthetic_data, iterations=iterations, batch_size=batch_size)
+    metrics['lds'] = long_discriminative_score_metrics(real_data, synthetic_data, iterations=iterations, batch_size=batch_size)
+    
+    # subset = 1000
+    # metrics['lps'] = long_predictive_score_metrics(real_data[:subset], synthetic_data[:subset], iterations=iterations, batch_size=batch_size)
+    # metrics['lds'] = long_discriminative_score_metrics(real_data[:subset], synthetic_data[:subset], iterations=iterations, batch_size=batch_size)
 
     return metrics
 

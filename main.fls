@@ -1,0 +1,4 @@
+PWD C:\WORK\Zero-Inflated-Time-Series-Generation
+INPUT C:\Users\Richard\AppData\Local\MiKTeX\miktex\data\le\pdftex\pdflatex.fmt
+INPUT main.tex
+OUTPUT main.log

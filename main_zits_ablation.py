@@ -461,10 +461,69 @@ def aggregate_mean_metrics(metrics_by_run: Iterable[Dict[str, Any]]) -> Dict[str
     metric_keys = sorted({k for metrics in all_metrics for k in metrics.keys()})
     means: Dict[str, float] = {}
     for key in metric_keys:
-        values = [float(metrics[key]) for metrics in all_metrics if key in metrics and metrics[key] is not None]
+        values = [
+            float(metrics[key])
+            for metrics in all_metrics
+            if key in metrics and metrics[key] is not None and np.isfinite(float(metrics[key]))
+        ]
         if values:
             means[key] = float(np.mean(values))
     return means
+
+
+def recompute_saved_metrics(
+    data: np.ndarray,
+    output_dir: str,
+    n_runs: int,
+    iterations: int = 100,
+    batch_size: int = 128,
+):
+    """Recompute metrics from saved synthetic data without loading models or training."""
+    root = Path(output_dir)
+    raw = np.squeeze(np.nan_to_num(data)).astype(np.float64)
+    case_table = []
+
+    for ablation_name, _ in build_ablation_cases():
+        case_dir = root / ablation_name
+        run_metrics = []
+
+        for run_idx in range(n_runs):
+            run_dir = case_dir / f"run_{run_idx:02d}"
+            generated_path = run_dir / "synthetic_generated_data.npz"
+            if not generated_path.is_file():
+                raise FileNotFoundError(
+                    f"Missing saved generated data for {ablation_name} run {run_idx}: {generated_path}"
+                )
+
+            with np.load(generated_path) as generated_file:
+                if "data" not in generated_file:
+                    raise KeyError(f"No 'data' array found in {generated_path}")
+                generated = np.squeeze(np.nan_to_num(generated_file["data"])).astype(np.float64)
+
+            metrics = calculate_evaluation_metrics(
+                raw, generated, iterations=iterations, batch_size=batch_size
+            )
+            with open(run_dir / "metrics.json", "w", encoding="utf-8") as f:
+                json.dump(metrics, f, indent=2, default=float)
+            run_metrics.append(metrics)
+            print(f"Recomputed metrics: {ablation_name} run {run_idx:02d}")
+
+        mean_metrics = aggregate_mean_metrics(run_metrics)
+        case_table.append({"ablation": ablation_name, **mean_metrics})
+        with open(case_dir / "mean_metrics.json", "w", encoding="utf-8") as f:
+            json.dump(mean_metrics, f, indent=2, default=float)
+
+    summary_df = pd.DataFrame(case_table)
+    summary_df.to_csv(root / "ablation_summary_means.csv", index=False)
+    with open(root / "ablation_summary_means.json", "w", encoding="utf-8") as f:
+        json.dump(case_table, f, indent=2, default=float)
+
+    print(f"\nMetrics-only run complete. Mean summary saved in {root}")
+    columns = [
+        key for key in ("ablation", "zero_ratio_diff", "mean_diff", "mmd", "autocorr_mae", "run_length_wasserstein", "ps", "ds", "lps", "lds")
+        if key in summary_df.columns
+    ]
+    print(summary_df[columns].to_string(index=False))
 
 
 def run_ablation_study(
@@ -480,12 +539,25 @@ def run_ablation_study(
     recon_weight: float = 10.0,
     num_synthetic: int = 2000,
     seed: int = 42,
+    metrics_only: bool = False,
+    metric_iterations: int = 100,
+    metric_batch_size: int = 128,
 ):
     root = Path(output_dir)
     root.mkdir(parents=True, exist_ok=True)
 
     data = load_m5_data(verbose=True)
     raw = np.squeeze(np.nan_to_num(data)).astype(np.float64)
+
+    if metrics_only:
+        recompute_saved_metrics(
+            raw,
+            output_dir=output_dir,
+            n_runs=n_runs,
+            iterations=metric_iterations,
+            batch_size=metric_batch_size,
+        )
+        return
 
     case_table = []
     for ablation_name, _ in build_ablation_cases():
@@ -536,6 +608,7 @@ def run_ablation_study(
 # Direct config variables: easier to edit and run quickly in a notebook/script.
 # ---------------------------------------------------------------------------
 OUTPUT_DIR = './results_m5_ablation'
+METRICS_ONLY = True
 N_RUNS = 3
 LATENT_DIM = 32
 EPOCHS = 25
@@ -546,6 +619,8 @@ GATE_WEIGHT = 5.0
 RECON_WEIGHT = 10.0
 NUM_SYNTHETIC = 2000
 SEED = 42
+METRIC_ITERATIONS = 100
+METRIC_BATCH_SIZE = 128
 
 
 if __name__ == "__main__":
@@ -563,4 +638,7 @@ if __name__ == "__main__":
         recon_weight=RECON_WEIGHT,
         num_synthetic=NUM_SYNTHETIC,
         seed=SEED,
+        metrics_only=METRICS_ONLY,
+        metric_iterations=METRIC_ITERATIONS,
+        metric_batch_size=METRIC_BATCH_SIZE,
     )

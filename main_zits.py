@@ -593,9 +593,9 @@ def main_test_vae(data, ori_data: np.ndarray, num_synthetic: int = 1000):
         pp = DataPreprocessor()
     elif data == "m5":
         pp = CountDataPreprocessor()
-    pp.load(os.path.join(OUT_FOLDER, 'vae_preprocessor.json'))
+    pp.load(os.path.join(OUT_FOLDER, 'zits_vae_preprocessor.json'))
 
-    ckpt  = torch.load(os.path.join(OUT_FOLDER, 'vae_model.pth'), map_location=device)
+    ckpt  = torch.load(os.path.join(OUT_FOLDER, 'zits_vae_model.pth'), map_location=device)
     model = ZITS_VAE(seq_length=ckpt['seq_length'],
                      latent_dim=ckpt['latent_dim']).to(device)
     model.load_state_dict(ckpt['model_state_dict'])
@@ -648,9 +648,9 @@ def main_test_gan(data, ori_data: np.ndarray, num_synthetic: int = 1000):
         pp = DataPreprocessor()
     elif data == "m5":
         pp = CountDataPreprocessor()
-    pp.load(os.path.join(OUT_FOLDER, 'gan_preprocessor.json'))
+    pp.load(os.path.join(OUT_FOLDER, 'zits_gan_preprocessor.json'))
 
-    ckpt  = torch.load(os.path.join(OUT_FOLDER, 'gan_generator.pth'), map_location=device)
+    ckpt  = torch.load(os.path.join(OUT_FOLDER, 'zits_gan_generator.pth'), map_location=device)
     model = ZITS_Generator(seq_length=ckpt['seq_length'], latent_dim=ckpt['latent_dim']).to(device)
     model.load_state_dict(ckpt['model_state_dict'])
     model.eval()

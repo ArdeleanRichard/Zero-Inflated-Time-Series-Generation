@@ -1,0 +1,12 @@
+{
+  "log_scale": 1.3979400086720377,
+  "max_seconds": 79280.0,
+  "stats": {
+    "log_scale": 1.3979400086720377,
+    "max_seconds": 79280.0,
+    "max_hours": 22.022222222222222,
+    "zero_ratio": 0.7410672443028625,
+    "min_nonzero": 1.0,
+    "mean_nonzero": 9920.437875437365
+  }
+}

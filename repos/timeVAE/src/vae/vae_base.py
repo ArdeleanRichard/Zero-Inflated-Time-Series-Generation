@@ -82,8 +82,10 @@ class BaseVariationalAutoencoder(Model, ABC):
         totalParams = trainableParams + nonTrainableParams
         return trainableParams, nonTrainableParams, totalParams
 
-    def get_prior_samples(self, num_samples):
-        Z = np.random.randn(num_samples, self.latent_dim)
+    def get_prior_samples(self, num_samples, seed=None):
+        Z = np.random.default_rng(seed).standard_normal(
+            (num_samples, self.latent_dim)
+        )
         samples = self.decoder.predict(Z, verbose=0)
         return samples
 

@@ -73,6 +73,10 @@ pip install -r requirements.txt
    python src/vae_pipeline.py
    ```
 
+   To change the seed, edit `seed = 42` near the dataset setting in
+   `./src/vae_pipeline.py`. Reuse a seed to reproduce a run; change it for
+   different data splitting, model initialization/training, and prior samples.
+
 4. **Outputs**:
    - Trained models are saved in `./outputs/models/<dataset_name>/`.
    - Generated synthetic data is saved in `./outputs/gen_data/<dataset_name>/` in `.npz` format.

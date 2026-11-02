@@ -22,8 +22,7 @@ Two models are implemented:
 import os
 import numpy as np
 
-from data_proc import load_iot_data, load_m5_data
-
+from data_proc import load_iot_data, load_m5_data, load_carparts_data
 
 
 # ===========================================================================
@@ -289,11 +288,27 @@ def run_baselines_m5(num_synthetic: int = 30_000):
 
     HurdleBaseline().fit(ori_data).save_samples(num_synthetic, f"{OUT_M5}/hurdle_generated_data.npz")
 
+def run_baselines_cp(num_synthetic: int = 30_000):
+    """Fit and generate baselines for the M5 dataset."""
+    ori_data = load_carparts_data().astype(np.float64)
+    print(f"\nM5 original data shape: {ori_data.shape}")
+    os.makedirs(OUT_CP, exist_ok=True)
+
+    ZIPBaseline().fit(ori_data).save_samples(num_synthetic, f"{OUT_CP}/zip_generated_data.npz")
+
+    HurdleBaseline().fit(ori_data).save_samples(num_synthetic, f"{OUT_CP}/hurdle_generated_data.npz")
 
 
 if __name__ == "__main__":
-    OUT_IOT = "./out_iot/baseline/"
-    OUT_M5 = "./out_m5/baseline/"
+    OUT_IOT = "./results_iot/baseline/"
+    OUT_M5 = "./results_m5/baseline/"
+    OUT_CP = "./results_cp/baseline/"
 
-    run_baselines_iot(num_synthetic=50_000)
+
+    import random
+    random.seed(1)
+    np.random.seed(1)
+
+    # run_baselines_iot(num_synthetic=50_000)
     # run_baselines_m5(num_synthetic=30_000)
+    run_baselines_cp(num_synthetic=2_000)

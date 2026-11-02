@@ -1,7 +1,5 @@
 import numpy as np
 import pandas as pd
-import torch
-from torch.utils.data import DataLoader, TensorDataset
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 import matplotlib
@@ -9,11 +7,6 @@ matplotlib.use('Agg')
 
 from constants import DATA_FOLDER, FIGS_FOLDER
 
-# Set seeds for reproducibility
-np.random.seed(42)
-torch.manual_seed(42)
-if torch.cuda.is_available():
-    torch.cuda.manual_seed(42)
 
 # Utility functions for data preparation and evaluation
 
@@ -53,36 +46,6 @@ def prepare_time_series_data(df, scaler=None):
     return data, scaler
 
 
-def create_dataloaders(data, train_ratio=0.8, batch_size=32):
-    """
-    Create PyTorch DataLoaders from numpy data
-
-    Args:
-        data: Numpy array of shape (n_samples, n_timesteps, 1)
-        train_ratio: Ratio of data to use for training
-        batch_size: Batch size for DataLoaders
-
-    Returns:
-        train_loader, val_loader
-    """
-    # Split into train and validation
-    n_train = int(len(data) * train_ratio)
-    train_data = data[:n_train]
-    val_data = data[n_train:]
-
-    # Convert to PyTorch tensors
-    train_tensor = torch.FloatTensor(train_data)
-    val_tensor = torch.FloatTensor(val_data)
-
-    # Create datasets
-    train_dataset = TensorDataset(train_tensor)
-    val_dataset = TensorDataset(val_tensor)
-
-    # Create dataloaders
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-
-    return train_loader, val_loader
 
 
 def read_iot_data():
@@ -116,7 +79,7 @@ def plot_samples(normalize=False):
 
 
     plt.tight_layout()
-    plt.savefig(f"./data_examples{"" if normalize==False else "_normalized"}.png")
+    plt.savefig(f"./data_examples{'' if normalize == False else '_normalized'}.png")
     plt.close()
 
 

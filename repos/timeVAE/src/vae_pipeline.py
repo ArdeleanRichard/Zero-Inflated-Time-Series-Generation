@@ -1,7 +1,6 @@
 # https://github.com/abudesai/timeVAE/
 import os, warnings
 import numpy as np
-import time
 
 
 from data_utils import (
@@ -15,6 +14,7 @@ from data_utils import (
 )
 import paths
 from vae.vae_utils import (
+    set_seeds,
     instantiate_vae_model,
     train_vae,
     save_vae_model,
@@ -25,7 +25,9 @@ from vae.vae_utils import (
 from visualize import plot_samples, plot_latent_space_samples, visualize_and_save_tsne
 
 
-def run_vae_pipeline(dataset_name: str, vae_type: str):
+def run_vae_pipeline(dataset_name: str, vae_type: str, seed: int = 42):
+    set_seeds(seed)
+
     # ----------------------------------------------------------------------------------
     # Load data, perform train/valid split, scale data
 
@@ -33,7 +35,9 @@ def run_vae_pipeline(dataset_name: str, vae_type: str):
     data = load_data(data_dir=paths.DATASETS_DIR, dataset=dataset_name)
 
     # split data into train/valid splits
-    train_data, valid_data = split_data(data, valid_perc=0.1, shuffle=True)
+    train_data, valid_data = split_data(
+        data, valid_perc=0.1, shuffle=True, seed=seed
+    )
 
     # scale data
     scaled_train_data, scaled_valid_data, scaler = scale_data(train_data, valid_data)
@@ -84,7 +88,9 @@ def run_vae_pipeline(dataset_name: str, vae_type: str):
     # Generate prior samples, visualize and save them
 
     # Generate prior samples
-    prior_samples = get_prior_samples(vae_model, num_samples=train_data.shape[0])
+    prior_samples = get_prior_samples(
+        vae_model, num_samples=train_data.shape[0], seed=seed
+    )
     # Plot prior samples
     plot_samples(
         samples1=prior_samples,
@@ -139,11 +145,13 @@ if __name__ == "__main__":
 
     # check `/data/` for available datasets
     # Must copy dataset here, must be in npz format
-    dataset = "iot_durations_2021"
+    # dataset = "iot_durations_2021"
     # dataset = "m5_X_365"
+    dataset = "carparts_X_51"
+    seed = 33
 
     # models: vae_dense, vae_conv, timeVAE
-    # model_name = "timeVAE"
+    # model_name = "vae_dense"
 
     for model_name in ["vae_dense", "vae_conv", "timeVAE"]:
-        run_vae_pipeline(dataset, model_name)
+        run_vae_pipeline(dataset, model_name, seed=seed)

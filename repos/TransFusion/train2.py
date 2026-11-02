@@ -113,7 +113,7 @@ def main_train(dataset_name):
     # dataset_name = 'iot'         # choices: 'sine','stock','air','energy', 'iot'
     beta_schedule = 'cosine'    # choices: 'cosine','linear','quadratic','sigmoid'
     objective = 'pred_v'        # choices: 'pred_x0','pred_v','pred_noise'
-    seq_len = 365
+    seq_len = 51
     batch_size = 16
     n_head = 2
     hidden_dim = 64
@@ -427,5 +427,20 @@ if __name__ == "__main__":
     # synthetic_data = main_test(model_folder, num_samples=10000)
 
     # main_train("m5")
-    model_folder = 'saved_files/1771403691.0601-custom-transformers-m5-l1-cosine-365-pred_v'
-    synthetic_data = main_test(model_folder, num_samples=10000)
+    # model_folder = 'saved_files/1771403691.0601-custom-transformers-m5-l1-cosine-365-pred_v'
+    # synthetic_data = main_test(model_folder, num_samples=10000)
+
+
+    import random
+    random.seed(4)
+    np.random.seed(4)
+    torch.manual_seed(4)
+
+    # main_train("cp")
+    model_folder = 'saved_files/1792691852.5785-custom-transformers-cp-l1-cosine-51-pred_v'
+    synthetic_data = main_test(model_folder, num_samples=2000)
+    model_folder = 'saved_files/1792692320.3597-custom-transformers-cp-l1-cosine-51-pred_v'
+    synthetic_data = main_test(model_folder, num_samples=2000)
+    model_folder = 'saved_files/1792693092.3569-custom-transformers-cp-l1-cosine-51-pred_v'
+    synthetic_data = main_test(model_folder, num_samples=2000)
+

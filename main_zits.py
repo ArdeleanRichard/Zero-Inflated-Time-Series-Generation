@@ -7,7 +7,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 from constants import device
-from data_proc import (DataPreprocessor, CountDataPreprocessor, TimeSeriesDataset, load_iot_data, make_dataloaders, load_m5_data)
+from data_proc import (DataPreprocessor, CountDataPreprocessor, TimeSeriesDataset, load_iot_data, make_dataloaders,
+                       load_m5_data, load_carparts_data)
 from utils import plot_training_history, plot_sample_comparisons
 
 
@@ -516,12 +517,16 @@ def train_gan(generator, discriminator, train_loader,
 # Shared pipeline helpers
 # ===========================================================================
 
-def _load_and_preprocess(data, raw: np.ndarray):
+def _make_preprocessor(data):
     if data == "iot":
-        pp   = DataPreprocessor()
-    elif data == "m5":
-        pp = CountDataPreprocessor()
+        return DataPreprocessor()
+    if data in ("m5", "cp"):
+        return CountDataPreprocessor()
+    raise ValueError(f"Unsupported dataset {data!r}; expected 'iot', 'm5', or 'cp'.")
 
+
+def _load_and_preprocess(data, raw: np.ndarray):
+    pp = _make_preprocessor(data)
     proc = pp.fit_transform(raw)
     # print(f"Preprocessor: zero_ratio={pp.stats['zero_ratio']:.2%}  "
     #       f"max={pp.max_seconds:.0f}s  norm_max={proc.max():.4f}")
@@ -589,13 +594,10 @@ def main_train_vae(data, ori_data: np.ndarray, latent_dim=64, num_epochs=100, lr
 
 
 def main_test_vae(data, ori_data: np.ndarray, num_synthetic: int = 1000):
-    if data == "iot":
-        pp = DataPreprocessor()
-    elif data == "m5":
-        pp = CountDataPreprocessor()
-    pp.load(os.path.join(OUT_FOLDER, 'vae_preprocessor.json'))
+    pp = _make_preprocessor(data)
+    pp.load(os.path.join(OUT_FOLDER, 'zits_vae_preprocessor.json'))
 
-    ckpt  = torch.load(os.path.join(OUT_FOLDER, 'vae_model.pth'), map_location=device)
+    ckpt  = torch.load(os.path.join(OUT_FOLDER, 'zits_vae_model.pth'), map_location=device)
     model = ZITS_VAE(seq_length=ckpt['seq_length'],
                      latent_dim=ckpt['latent_dim']).to(device)
     model.load_state_dict(ckpt['model_state_dict'])
@@ -644,13 +646,10 @@ def main_train_gan(data, ori_data: np.ndarray, latent_dim=64, num_epochs=100, lr
 
 
 def main_test_gan(data, ori_data: np.ndarray, num_synthetic: int = 1000):
-    if data == "iot":
-        pp = DataPreprocessor()
-    elif data == "m5":
-        pp = CountDataPreprocessor()
-    pp.load(os.path.join(OUT_FOLDER, 'gan_preprocessor.json'))
+    pp = _make_preprocessor(data)
+    pp.load(os.path.join(OUT_FOLDER, 'zits_gan_preprocessor.json'))
 
-    ckpt  = torch.load(os.path.join(OUT_FOLDER, 'gan_generator.pth'), map_location=device)
+    ckpt  = torch.load(os.path.join(OUT_FOLDER, 'zits_gan_generator.pth'), map_location=device)
     model = ZITS_Generator(seq_length=ckpt['seq_length'], latent_dim=ckpt['latent_dim']).to(device)
     model.load_state_dict(ckpt['model_state_dict'])
     model.eval()
@@ -663,21 +662,35 @@ def main_test_gan(data, ori_data: np.ndarray, num_synthetic: int = 1000):
 # ===========================================================================
 
 if __name__ == "__main__":
-    ### Best parameters
+    # import random
+    # random.seed(3)
+    # np.random.seed(3)
+    # torch.manual_seed(3)
+
+    # ### Best parameters
+    # ori_data = load_carparts_data()
+    # DATA = "cp"
+    # OUT_FOLDER       = f"./results_{DATA}/"
+    # os.makedirs(OUT_FOLDER, exist_ok=True)
+    # main_train_vae(DATA, ori_data, latent_dim=64, num_epochs=100, lr=0.001, beta=0.1, gate_weight=1.0, recon_weight=1.0, tc_weight=1.0)
+    # main_test_vae(DATA, ori_data, num_synthetic=2000)
+    # main_train_gan(DATA, ori_data, latent_dim=64, num_epochs=100, lr=0.0001, betas=(0.5, 0.9), gate_weight=1.0, recon_weight=1.0, tc_weight=1.0, fm_weight=1.0)
+    # main_test_gan(DATA, ori_data, num_synthetic=2000)
+
     ori_data = load_iot_data()
     DATA = "iot"
     OUT_FOLDER       = f"./results_{DATA}/"
     os.makedirs(OUT_FOLDER, exist_ok=True)
-    main_train_vae(DATA, ori_data, latent_dim=128, num_epochs=100, lr=0.0005, beta=0.1, gate_weight=10.0, recon_weight=10.0, tc_weight=0.5)
-    main_test_vae(DATA, ori_data, num_synthetic=50000)
-    main_train_gan(DATA, ori_data, latent_dim=128, num_epochs=100, lr=0.0002, betas=(0.5, 0.9), gate_weight=1.0, recon_weight=10.0, tc_weight=0.0, fm_weight=0.5)
-    main_test_gan(DATA, ori_data, num_synthetic=50000)
+    main_train_vae(DATA, ori_data, latent_dim=64, num_epochs=100, lr=0.0005, beta=0.1, gate_weight=10.0, recon_weight=10.0, tc_weight=0.5)
+    # main_test_vae(DATA, ori_data, num_synthetic=50000)
+    main_train_gan(DATA, ori_data, latent_dim=64, num_epochs=100, lr=0.0002, betas=(0.5, 0.9), gate_weight=1.0, recon_weight=10.0, tc_weight=0.0, fm_weight=0.5)
+    # main_test_gan(DATA, ori_data, num_synthetic=50000)
 
-    ori_data = load_m5_data()
-    DATA = "m5"
-    OUT_FOLDER       = f"./results_{DATA}/"
-    os.makedirs(OUT_FOLDER, exist_ok=True)
-    main_train_vae(DATA, ori_data, latent_dim=128, num_epochs=100, lr=0.0005, beta=1.0, gate_weight=5.0, recon_weight=5.0, tc_weight=0.0)
-    main_test_vae(DATA, ori_data, num_synthetic=30000)
-    main_train_gan(DATA, ori_data, latent_dim=128, num_epochs=100, lr=0.0001, betas=(0.0, 0.9), gate_weight=10.0, recon_weight=5.0, tc_weight=0.5, fm_weight=0.5)
-    main_test_gan(DATA, ori_data, num_synthetic=30000)
+    # ori_data = load_m5_data()
+    # DATA = "m5"
+    # OUT_FOLDER       = f"./results_{DATA}/"
+    # os.makedirs(OUT_FOLDER, exist_ok=True)
+    # main_train_vae(DATA, ori_data, latent_dim=128, num_epochs=100, lr=0.0005, beta=1.0, gate_weight=5.0, recon_weight=5.0, tc_weight=0.0)
+    # main_test_vae(DATA, ori_data, num_synthetic=30000)
+    # main_train_gan(DATA, ori_data, latent_dim=128, num_epochs=100, lr=0.0001, betas=(0.0, 0.9), gate_weight=10.0, recon_weight=5.0, tc_weight=0.5, fm_weight=0.5)
+    # main_test_gan(DATA, ori_data, num_synthetic=30000)

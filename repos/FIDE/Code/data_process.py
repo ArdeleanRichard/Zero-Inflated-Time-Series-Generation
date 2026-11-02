@@ -113,6 +113,20 @@ def load_m5_data():
     return t, real_data, real_data.shape[1], real_data.shape[2]
 
 
+def load_cp_data():
+    data = np.load("../../../data/carparts/carparts_X_51.npy")
+    # real_data = data[:20000]
+    real_data = data
+
+    real_data = real_data[..., np.newaxis].astype(np.float32)
+
+    seq_len = real_data.shape[1]
+    t = torch.arange(1, seq_len + 1, dtype=torch.float32).view(1, seq_len, 1).expand(real_data.shape[0], seq_len, 1).to(device)
+    real_data = torch.from_numpy(real_data)
+
+    return t, real_data, real_data.shape[1], real_data.shape[2]
+
+
 def data_enhance_frequency(real_data):
     from scipy.fft import rfft, rfftfreq, irfft
     # Frequency enhancement parameters

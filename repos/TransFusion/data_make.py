@@ -140,6 +140,14 @@ def LoadData(dataset_name, seq_len):
         test_data = data[train_idx:]
         print(data.shape)
 
+    if dataset_name == 'cp':
+        data = np.load("../../data/carparts/carparts_X_51.npz")["data"].astype(np.float32)
+
+        train_idx = int(0.8 * len(data))
+        train_data = data[:train_idx]
+        test_data = data[train_idx:]
+        print(data.shape)
+
     else:
         
         data = data_preprocess(dataset_name)

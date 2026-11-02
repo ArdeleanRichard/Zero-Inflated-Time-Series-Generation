@@ -7,9 +7,11 @@ warnings.filterwarnings("ignore")
 import numpy as np
 import tensorflow as tf
 
+from constants import RANDOM_SEED
 from utils import extract_time, random_generator, batch_generator
-from metrics.discriminative_metrics import discriminative_score_metrics
-from metrics.predictive_metrics import predictive_score_metrics
+from utils import set_random_seed
+from discriminative_metrics import discriminative_score_metrics
+from predictive_metrics import predictive_score_metrics
 
 tf.keras.backend.set_image_data_format("channels_last")
 
@@ -103,12 +105,18 @@ class AEDiscriminator(tf.keras.Model):
         return self.out(c)
 
 
-def chronogan(ori_data, parameters, num_samples):
+def main_chronogan(ori_data, parameters, num_samples, seed=RANDOM_SEED):
     tf.keras.backend.clear_session()
-    np.random.seed(0)
-    tf.random.set_seed(0)
+    set_random_seed(seed)
 
     ori_data = np.asarray(ori_data)
+    if ori_data.ndim != 3 or ori_data.shape[0] == 0:
+        raise ValueError("ori_data must be a non-empty 3D array.")
+    if num_samples != "same" and (
+        not isinstance(num_samples, (int, np.integer)) or isinstance(num_samples, bool) or num_samples <= 0
+    ):
+        raise ValueError("num_samples must be 'same' or a positive integer.")
+
     no, seq_len, dim = ori_data.shape
     ori_time, max_seq_len = extract_time(ori_data)
 
@@ -221,14 +229,19 @@ def chronogan(ori_data, parameters, num_samples):
         def median_tensor(data):
             ts = tf.cast(time_size, tf.int32)
             mid = ts // 2
+            is_odd = tf.equal(ts % 2, 1)
 
-            def odd():
-                return data[:, mid, :]
+            odd_val = data[:, mid, :]
+            even_val = (data[:, mid - 1, :] + data[:, mid, :]) / 2.0
 
-            def even():
-                return (data[:, (mid - 1), :] + data[:, mid, :]) / 2.0
+            # Since odd_val is guaranteed to be 2D (batch_size, dim),
+            # we can safely build the broadcast shape without using Python len() on a tensor.
+            batch_dim = tf.shape(odd_val)[0]
+            feature_dim = tf.shape(odd_val)[1]
+            broadcast_shape = tf.stack([batch_dim, feature_dim])
 
-            return tf.cond(tf.equal(ts % 2, 1), odd, even)
+            is_odd_broadcasted = tf.broadcast_to(tf.expand_dims(is_odd, 0), broadcast_shape)
+            return tf.where(is_odd_broadcasted, odd_val, even_val)
 
         median_X = median_tensor(X_mb)
         median_X_hat = median_tensor(X_hat)
@@ -461,7 +474,7 @@ def chronogan(ori_data, parameters, num_samples):
             Z_mb = random_generator(no, z_dim, ori_time, max_seq_len)
             Z_mb_t = tf.convert_to_tensor(np.asarray(Z_mb, dtype=np.float32))
 
-            generated_data_curr = recovery(
+            gen_out = recovery(
                 supervisor(
                     generator(
                         Z_mb_t,
@@ -473,15 +486,15 @@ def chronogan(ori_data, parameters, num_samples):
                 ),
                 tf.convert_to_tensor(np.asarray(ori_time, dtype=np.int32)),
                 training=False,
-            ).numpy()
+            )
+            generated_data_curr = gen_out.numpy() if hasattr(gen_out, 'numpy') else tf.keras.backend.get_value(gen_out)
 
-            generated_data = []
+            generated_data_normalized = []
             for i in range(no):
                 temp = generated_data_curr[i, :ori_time[i], :]
-                generated_data.append(temp)
-            generated_data = np.array(generated_data)
-            generated_data = generated_data * max_val
-            generated_data = generated_data + min_val
+                generated_data_normalized.append(temp)
+            generated_data_normalized = np.array(generated_data_normalized)
+            generated_data = generated_data_normalized * max_val + min_val
 
             final_generated = np.copy(generated_data)
             print(f"Generated data: {generated_data.shape}")
@@ -489,9 +502,13 @@ def chronogan(ori_data, parameters, num_samples):
             metric_iteration = 3
             print("Computing discriminative score...")
             discriminative_score = []
-            for _ in range(metric_iteration):
+            for metric_run in range(metric_iteration):
                 temp_disc = discriminative_score_metrics(
-                    ori_data, generated_data, iterations=iterations, batch_size=batch_size
+                    ori_data,
+                    generated_data_normalized,
+                    iterations=iterations,
+                    batch_size=batch_size,
+                    seed=seed + metric_run,
                 )
                 discriminative_score.append(temp_disc)
             discriminative_score = np.array(discriminative_score)
@@ -505,9 +522,13 @@ def chronogan(ori_data, parameters, num_samples):
 
             print("Computing predictive score...")
             predictive_score = []
-            for _ in range(metric_iteration):
+            for metric_run in range(metric_iteration):
                 temp_pred = predictive_score_metrics(
-                    ori_data, generated_data, iterations=iterations, batch_size=batch_size
+                    ori_data,
+                    generated_data_normalized,
+                    iterations=iterations,
+                    batch_size=batch_size,
+                    seed=seed + metric_iteration + metric_run,
                 )
                 predictive_score.append(temp_pred)
             predictive_score = np.array(predictive_score)
@@ -518,10 +539,10 @@ def chronogan(ori_data, parameters, num_samples):
             )
 
             mean_real = np.mean(ori_data, axis=0)
-            mean_synthetic = np.mean(generated_data, axis=0)
+            mean_synthetic = np.mean(generated_data_normalized, axis=0)
             mse_mean = np.mean((mean_real - mean_synthetic) ** 2)
             variance_real = np.var(ori_data, axis=0)
-            variance_synthetic = np.var(generated_data, axis=0)
+            variance_synthetic = np.var(generated_data_normalized, axis=0)
             mse_variance = np.mean((variance_real - variance_synthetic) ** 2)
 
             mean_dis_score = np.round(np.min(filtered_discriminative_score), 4) if filtered_discriminative_score.size > 0 else 0.0
@@ -548,12 +569,12 @@ def chronogan(ori_data, parameters, num_samples):
         print(f"Final data returned: {final_generated.shape}")
         return final_generated
     else:
-        count = int(num_samples / no)
+        count = (num_samples + no - 1) // no
         all_generated_data = []
         for _ in range(count):
             Z_mb = random_generator(no, z_dim, ori_time, max_seq_len)
             Z_mb_t = tf.convert_to_tensor(np.asarray(Z_mb, dtype=np.float32))
-            generated_data_curr = recovery(
+            gen_out = recovery(
                 supervisor(
                     generator(
                         Z_mb_t,
@@ -565,7 +586,8 @@ def chronogan(ori_data, parameters, num_samples):
                 ),
                 tf.convert_to_tensor(np.asarray(ori_time, dtype=np.int32)),
                 training=False,
-            ).numpy()
+            )
+            generated_data_curr = gen_out.numpy() if hasattr(gen_out, 'numpy') else tf.keras.backend.get_value(gen_out)
 
             generated_data = []
             for i in range(no):
@@ -577,4 +599,4 @@ def chronogan(ori_data, parameters, num_samples):
             all_generated_data.append(generated_data)
 
         all_generated_data = np.concatenate(all_generated_data, axis=0)
-        return all_generated_data
+        return all_generated_data[:num_samples]

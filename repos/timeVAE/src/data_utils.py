@@ -77,9 +77,8 @@ def split_data(
     N_train = int(N * (1 - valid_perc))
 
     if shuffle:
-        np.random.seed(seed)
         data = data.copy()
-        np.random.shuffle(data)
+        np.random.default_rng(seed).shuffle(data)
 
     train_data = data[:N_train]
     valid_data = data[N_train:]

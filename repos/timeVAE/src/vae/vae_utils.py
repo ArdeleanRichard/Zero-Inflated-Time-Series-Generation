@@ -51,8 +51,6 @@ def instantiate_vae_model(
     Raises:
         ValueError: If an unrecognized VAE type is provided.
     """
-    set_seeds(seed=123)
-
     if vae_type == "vae_dense":
         vae = VAE_Dense(
             seq_len=sequence_length,
@@ -151,15 +149,16 @@ def get_posterior_samples(vae, data):
     return vae.predict(data, verbose=0)
 
 
-def get_prior_samples(vae, num_samples: int):
+def get_prior_samples(vae, num_samples: int, seed=None):
     """
     Get prior samples from the VAE model.
 
     Args:
         vae (Union[VAE_Dense, VAE_Conv, TimeVAE]): The trained VAE model.
         num_samples (int): The number of samples to generate.
+        seed (int, optional): Seed for drawing latent vectors.
 
     Returns:
         np.ndarray: The prior samples.
     """
-    return vae.get_prior_samples(num_samples=num_samples)
+    return vae.get_prior_samples(num_samples=num_samples, seed=seed)

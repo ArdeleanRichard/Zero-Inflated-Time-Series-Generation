@@ -40,6 +40,14 @@ This work proposes two architectures, ZITS-GAN and ZITS-VAE, designed for zero-i
 * **Description**: consists of time series data capturing the daily operational duration of household IoT devices characterized by discrete operating cycles over one year. To ensure statistical relevance and data quality, we retained from the raw dataset - comprising individual running cycle durations in seconds per device - only those devices exhibiting a sufficient number of running cycles. 
 * **Access**: unavailable. 
 
+### 3. Car Parts Dataset
+
+* **Name**: Car Parts
+* **Description**: 2,674 intermittent monthly car-parts sales series, covering January 1998 through March 2002 (51 observations per series). Missing values in the original series are replaced with zeros in this release.
+* **Access**: [Zenodo Car Parts Dataset](https://zenodo.org/records/4656021) (CC BY 4.0).
+* **Download and preprocessing**: run `python download_data_carparts.py`. This saves the source archive and TSF file, a CSV with month columns, and arrays under `data/carparts/`. The model-ready arrays are `carparts_X_51.npy` with shape `(2674, 51)` and `carparts_X_51.npz` with key `data` and shape `(2674, 51, 1)`.
+
+To evaluate the saved Car Parts model runs, run `python main_metrics_carparts.py` from the repository root. The script writes a checkpointed `results_cp/carparts_metrics.csv`; completed runs are skipped on restart, while failed runs are reported and retried.
 
 ---
 
@@ -73,16 +81,6 @@ We show here a summary of the evaluations made showing the difference in 0 ratio
 If you use this code or reference the models/datasets in your work, please cite:
 
 ```bibtex
-@article{Ardelean2025YOLO,
-  title     = {Can YOLO Detect Retinal Pathologies? A Step Towards Automated OCT Analysis},
-  author    = {Ardelean, Adriana-Ioana and Ardelean, Eugen-Richard and Marginean, Anca},
-  journal   = {Diagnostics},
-  year      = {2025},
-  volume    = {15},
-  number    = {14},
-  pages     = {1823},
-  doi       = {10.3390/diagnostics15141823}
-}
 ```
 
 ---
@@ -94,4 +92,3 @@ For questions, please contact:
 📧 [ardeleaneugenrichard@gmail.com](mailto:ardeleaneugenrichard@gmail.com)
 
 ---
-

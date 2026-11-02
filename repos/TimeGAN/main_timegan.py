@@ -6,7 +6,7 @@ from __future__ import print_function
 import numpy as np
 import warnings
 
-from metrics.discriminative_metrics import discriminative_score_metrics
+from discriminative_metrics import discriminative_score_metrics
 from data_proc import read_iot_data
 
 warnings.filterwarnings("ignore")
@@ -58,10 +58,20 @@ if __name__ == "__main__":
     # generated_data = train_data(original_data)
     # np.savez_compressed('./out/iot_timegan_generated_data.npz', data=generated_data)
 
-    original_data = np.load("../../data/m5/m5_X_365.npz")["data"]
-    generated_data = train_data(original_data)
-    np.savez_compressed('./out/m5_timegan_generated_data.npz', data=generated_data)
+    # original_data = np.load("../../data/m5/m5_X_365.npz")["data"]
+    # generated_data = train_data(original_data)
+    # np.savez_compressed('./out/m5_timegan_generated_data.npz', data=generated_data)
 
     # generated_data = np.load('wm_timegan_generated_data.npz', allow_pickle=True)
     # generated_data = generated_data['data']
+
+    import random
+    import torch
+    random.seed(1)
+    np.random.seed(1)
+    torch.manual_seed(1)
+
+    original_data = np.load("../../data/carparts/carparts_X_51.npz")["data"]
+    generated_data = train_data(original_data)
+    np.savez_compressed('./out/carparts_X_51.npz', data=generated_data)
 

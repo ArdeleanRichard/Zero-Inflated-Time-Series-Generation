@@ -2,17 +2,23 @@
 import numpy as np
 
 from data_proc import read_iot_data
-from chronogan import chronogan
+from chronogan import main_chronogan
+from constants import RANDOM_SEED
+from utils import set_random_seed
+
+set_random_seed(RANDOM_SEED)
 
 original_data = []
 generated_data = []
 
-DATA = "m5"
+DATA = "cp"
 if DATA == "iot":
     data_df = read_iot_data()
     data = data_df.to_numpy()
 if DATA == "m5":
     data = np.load("../../data/m5/m5_X_365.npz")["data"].squeeze()
+if DATA == "cp":
+    data = np.load("./data/carparts_X_51.npz")["data"].squeeze()
 
 # Split data
 train_idx = int(0.8 * len(data))
@@ -32,7 +38,7 @@ parameters['batch_size'] = 128
 parameters['num_layer'] = 4
 
 
-chronogan_result = chronogan(original_data, parameters, 'same')
+chronogan_result = main_chronogan(original_data, parameters, 2000, seed=RANDOM_SEED)
 print(chronogan_result.shape)
 
 np.savez_compressed(f'./output_{DATA}/synthetic_data.npz', data=chronogan_result)

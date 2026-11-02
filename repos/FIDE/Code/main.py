@@ -9,16 +9,20 @@ from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
 
 from constants import device, is_fit_AR, diffusion_steps, n_epochs, batch_size, is_regularizer, gp_sigma
-from data_process import fit_AR_model, load_iot_data, data_enhance_frequency, load_m5_data
+from data_process import fit_AR_model, load_iot_data, data_enhance_frequency, load_m5_data, load_cp_data
 from general_utilities import (fitting_gev_and_sampling, plot_kde, KS_Test, CMD, KL_JS_divergence, CRPS)
 from fide_model import TransformerModel
 from train_utilities import (get_betas, get_loss, plot_losses, sample)
 
+import random
 
+random.seed(56)
+np.random.seed(56)
+torch.manual_seed(56)
 # ========== DATA PROCESSING ==========
 print("Loading and processing data...")
 # t, real_data, seq_len, n_condition = load_iot_data()
-t, real_data, seq_len, n_condition = load_m5_data()
+t, real_data, seq_len, n_condition = load_cp_data()
 print(t.shape)
 print(real_data.shape)
 

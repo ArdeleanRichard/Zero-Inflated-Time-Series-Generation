@@ -10,6 +10,18 @@ utils.py
 
 ## Necessary Packages
 import numpy as np
+import random
+
+from constants import RANDOM_SEED
+
+
+def set_random_seed(seed=RANDOM_SEED):
+  """Seed Python, NumPy, and TensorFlow random number generators."""
+  random.seed(seed)
+  np.random.seed(seed)
+
+  import tensorflow as tf
+  tf.keras.utils.set_random_seed(seed)
 
 
 def train_test_divide(data_x, data_x_hat, data_t, data_t_hat, train_rate = 0.8):

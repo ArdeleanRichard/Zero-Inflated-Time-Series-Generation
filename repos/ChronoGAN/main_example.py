@@ -3,6 +3,10 @@ import numpy as np
 import tensorflow as tf
 
 from repos.ChronoGAN.data_loading import real_data_loading, sine_data_generation
+from constants import RANDOM_SEED
+from utils import set_random_seed
+
+set_random_seed(RANDOM_SEED)
 
 tf.compat.v1.disable_eager_execution()
 import logging

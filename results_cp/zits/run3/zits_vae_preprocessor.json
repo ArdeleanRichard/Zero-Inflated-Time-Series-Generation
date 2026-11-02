@@ -1,0 +1,21 @@
+{
+  "log_scale": 1.0413926851582251,
+  "max_count": 52.0,
+  "fitted_max": 52.0,
+  "fitted_quantile": 10.0,
+  "quantile": 0.99,
+  "clip_strategy": "none",
+  "stats": {
+    "log_scale": 1.0413926851582251,
+    "max_count": 52.0,
+    "fitted_max": 52.0,
+    "fitted_quantile": 10.0,
+    "quantile": 0.99,
+    "zero_ratio": 0.759088975904498,
+    "min_nonzero": 1.0,
+    "mean_nonzero": 2.0147927193035855,
+    "median_nonzero": 1.0,
+    "p95_nonzero": 5.0,
+    "p99_nonzero": 10.0
+  }
+}

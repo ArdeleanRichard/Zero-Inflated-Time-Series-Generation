@@ -334,6 +334,21 @@ def load_m5_data(verbose: bool = True) -> np.ndarray:
         print(f"Mean (non-zero):  {np.mean(nz):.1f}s  ({np.mean(nz)/3600:.2f}h)")
     return data
 
+
+def load_carparts_data(verbose: bool = True) -> np.ndarray:
+    """Load monthly Car Parts sales as an (n_series, n_months) count array."""
+    data = np.load("./data/carparts/carparts_X_51.npy").astype(np.float32)
+
+    if verbose:
+        nz = data[data > 0]
+        print(f"Dataset shape:    {data.shape}")
+        print(f"Zero ratio:       {np.mean(data == 0):.2%}")
+        print(f"Max count:        {np.max(data):.1f}")
+        if len(nz):
+            print(f"Min non-zero:     {np.min(nz):.1f}")
+            print(f"Mean (non-zero):  {np.mean(nz):.1f}")
+    return data
+
 # ---------------------------------------------------------------------------
 # Visual sanity-check
 # ---------------------------------------------------------------------------

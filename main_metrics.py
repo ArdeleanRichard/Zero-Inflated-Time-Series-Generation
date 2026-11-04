@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 
 from constants import MAP_MODEL_NAMES
 from metrics import (calculate_evaluation_metrics, print_evaluation_metrics, save_metrics_report)
+from utils import style_sample_comparison_axis
 
 
 def plot_sample_comparisons(real_samples, synthetic_samples,num_samples = 5, save_path = 'sample_comparison.png'):
@@ -22,18 +23,20 @@ def plot_sample_comparisons(real_samples, synthetic_samples,num_samples = 5, sav
     for i in range(num_samples):
         # Real sample
         axes[i, 0].plot(real_samples[i], linewidth=1, alpha=0.7)
-        axes[i, 0].set_title(f'Real Sample {i + 1}')
-        axes[i, 0].set_ylabel('Value')
+        axes[i, 0].set_title(f'Real Sample {i + 1}', fontsize=12)
+        axes[i, 0].set_ylabel('Value', fontsize=12)
         axes[i, 0].grid(True, alpha=0.3)
+        style_sample_comparison_axis(axes[i, 0])
 
         # Synthetic sample
         axes[i, 1].plot(synthetic_samples[i], linewidth=1, alpha=0.7, color='orange')
-        axes[i, 1].set_title(f'Synthetic Sample {i + 1}')
-        axes[i, 1].set_ylabel('Value')
+        axes[i, 1].set_title(f'Synthetic Sample {i + 1}', fontsize=12)
+        axes[i, 1].set_ylabel('Value', fontsize=12)
         axes[i, 1].grid(True, alpha=0.3)
+        style_sample_comparison_axis(axes[i, 1])
 
-    axes[-1, 0].set_xlabel('Time Step')
-    axes[-1, 1].set_xlabel('Time Step')
+    axes[-1, 0].set_xlabel('Time Step', fontsize=12)
+    axes[-1, 1].set_xlabel('Time Step', fontsize=12)
 
     plt.tight_layout()
     plt.savefig(save_path, dpi=300, bbox_inches='tight')

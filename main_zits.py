@@ -681,10 +681,10 @@ if __name__ == "__main__":
     DATA = "iot"
     OUT_FOLDER       = f"./results_{DATA}/"
     os.makedirs(OUT_FOLDER, exist_ok=True)
-    main_train_vae(DATA, ori_data, latent_dim=64, num_epochs=100, lr=0.0005, beta=0.1, gate_weight=10.0, recon_weight=10.0, tc_weight=0.5)
-    # main_test_vae(DATA, ori_data, num_synthetic=50000)
-    main_train_gan(DATA, ori_data, latent_dim=64, num_epochs=100, lr=0.0002, betas=(0.5, 0.9), gate_weight=1.0, recon_weight=10.0, tc_weight=0.0, fm_weight=0.5)
-    # main_test_gan(DATA, ori_data, num_synthetic=50000)
+    # main_train_vae(DATA, ori_data, latent_dim=64, num_epochs=100, lr=0.0005, beta=0.1, gate_weight=10.0, recon_weight=10.0, tc_weight=0.5)
+    main_test_vae(DATA, ori_data, num_synthetic=50000)
+    # main_train_gan(DATA, ori_data, latent_dim=64, num_epochs=100, lr=0.0002, betas=(0.5, 0.9), gate_weight=1.0, recon_weight=10.0, tc_weight=0.0, fm_weight=0.5)
+    main_test_gan(DATA, ori_data, num_synthetic=50000)
 
     # ori_data = load_m5_data()
     # DATA = "m5"

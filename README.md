@@ -2,13 +2,13 @@
  
 This repository contains the code and configurations for a study submitted as a scientific research article including two new proposed approach for zero inflated time series generation.
 
-<!-- 
-[![DOI](https://img.shields.io/badge/DOI-10.3390/diagnostics15141823-blue)](https://doi.org/10.3390/diagnostics15141823) 
+
+[![DOI](https://img.shields.io/badge/DOI-10.3390/make8110365-blue)](https://doi.org/10.3390/make8110365) 
 
 This repository contains the code and configurations used in the study titled:
-**"Can YOLO Detect Retinal Pathologies? A Step Towards Automated OCT Analysis"**
-by Adriana-Ioana Ardelean, Eugen-Richard Ardelean, and Anca Marginean, published in *Diagnostics*, 2025.
--->
+**"Zero-Inflated Time Series Generation"**
+by Eugen-Richard Ardelean, and Raluca Portase, published in *MAKE*, 2026.
+
 
 ## 📄 Overview
 
@@ -75,16 +75,34 @@ We show here a summary of the evaluations made showing the difference in 0 ratio
 | ZITS-VAE  | Household IoT Devices     | **0.033** | **2153**   | 0.248      |
 
 ---
-<!-- 
+
 ## 📜 Citation
 
 If you use this code or reference the models/datasets in your work, please cite:
 
 ```bibtex
+@article{10.3390/make8110365,
+	title = {Zero-{Inflated} {Time} {Series} {Generation}},
+	volume = {8},
+	copyright = {All rights reserved},
+	issn = {2504-4990},
+	url = {https://www.mdpi.com/2504-4990/8/11/365},
+	doi = {10.3390/make8110365},
+	language = {en},
+	number = {11},
+	urldate = {2026-11-05},
+	journal = {Machine Learning and Knowledge Extraction},
+	publisher = {Multidisciplinary Digital Publishing Institute},
+	author = {Ardelean, Eugen-Richard and Portase, Raluca},
+	month = nov,
+	year = {2026},
+	keywords = {GAN, synthetic data, time series generation, VAE, zero-inflated data, zero-inflated time series},
+	pages = {365},
+	file = {Full Text PDF:C\:\\Users\\Richard\\Zotero\\storage\\ABQ4KX3S\\Ardelean and Portase - 2026 - Zero-Inflated Time Series Generation.pdf:application/pdf},
+}
 ```
 
 ---
--->
 
 ## 📬 Contact
 
